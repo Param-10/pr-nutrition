@@ -1,31 +1,51 @@
-export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'unknown';
+export interface AreaClassification {
+  isTest: boolean;
+  isDoc: boolean;
+  isConfig: boolean;
+  isGenerated: boolean;
+  isLowValue: boolean;
+}
 
-export interface FileChange {
+export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'unknown';
+
+export interface ChangedFile {
   path: string;
   status: FileStatus;
   additions: number;
   deletions: number;
-  isLowValue: boolean;
-  isGenerated: boolean;
+  classification: AreaClassification;
 }
 
-export interface AnalysisEvidence {
+export interface RepositoryEvidence {
   hasTests: boolean;
   hasDocs: boolean;
   hasConfigChanges: boolean;
 }
 
-export type RiskLevel = 'low' | 'medium' | 'high';
-
-export interface RiskAnalysis {
-  score: number;
-  level: RiskLevel;
-  reasons: string[];
+export interface RiskReason {
+  description: string;
+  points: number;
 }
 
-export interface PRNutritionResult {
-  files: FileChange[];
-  evidence: AnalysisEvidence;
-  risk: RiskAnalysis;
+export interface AnalysisResult {
+  files: ChangedFile[];
+  evidence: RepositoryEvidence;
+  risk: {
+    score: number;
+    level: 'low' | 'medium' | 'high';
+    reasons: RiskReason[];
+  };
   warnings: string[];
+  comparison: {
+    baseRef: string;
+    headRef: string;
+    mergeBase: string;
+  };
 }
+
+export interface AnalyzeOptions {
+  repoPath: string;
+  baseRef: string;
+  headRef: string;
+}
+

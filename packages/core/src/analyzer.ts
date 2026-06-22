@@ -1,10 +1,12 @@
-import type { PRNutritionResult, AnalysisEvidence } from './types.js';
+import type { AnalysisResult, AnalyzeOptions, RepositoryEvidence } from './types.js';
 import { getGitDiff } from './git.js';
-import { isTestFile, isDocFile, isConfigFile, isGeneratedFile, isLowValueFile } from './classifier.js';
+import { classifyFiles } from './classifier.js';
 import { calculateRisk } from './scorer.js';
 
-export function analyzePR(base: string, head: string, cwd: string = process.cwd()): PRNutritionResult {
-  const files = getGitDiff(base, head, cwd);
+export function analyzePullRequest(options: AnalyzeOptions): AnalysisResult {
+  const { repoPath, baseRef, headRef } = options;
+  
+  const { files, mergeBase } = getGitDiff(baseRef, headRef, repoPath);
   const warnings: string[] = [];
 
   let hasTests = false;
@@ -12,22 +14,21 @@ export function analyzePR(base: string, head: string, cwd: string = process.cwd(
   let hasConfigChanges = false;
 
   // Enrich files with classification
-  for (const file of files) {
-    file.isGenerated = isGeneratedFile(file.path);
-    file.isLowValue = isLowValueFile(file.path);
+  classifyFiles(files);
 
-    if (isTestFile(file.path)) {
+  for (const file of files) {
+    if (file.classification.isTest) {
       hasTests = true;
     }
-    if (isDocFile(file.path)) {
+    if (file.classification.isDoc) {
       hasDocs = true;
     }
-    if (isConfigFile(file.path)) {
+    if (file.classification.isConfig) {
       hasConfigChanges = true;
     }
   }
 
-  const evidence: AnalysisEvidence = {
+  const evidence: RepositoryEvidence = {
     hasTests,
     hasDocs,
     hasConfigChanges,
@@ -40,5 +41,10 @@ export function analyzePR(base: string, head: string, cwd: string = process.cwd(
     evidence,
     risk,
     warnings,
+    comparison: {
+      baseRef,
+      headRef,
+      mergeBase,
+    },
   };
 }

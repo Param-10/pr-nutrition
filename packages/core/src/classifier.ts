@@ -1,54 +1,57 @@
-export function isTestFile(path: string): boolean {
+import type { ChangedFile } from './types.js';
+
+export function classifyFiles(files: ChangedFile[]): void {
+  for (const file of files) {
+    file.classification.isTest = isTestFile(file.path);
+    file.classification.isDoc = isDocFile(file.path);
+    file.classification.isConfig = isConfigFile(file.path);
+    file.classification.isLowValue = file.classification.isGenerated || isLowValueFile(file.path);
+  }
+}
+
+function isTestFile(path: string): boolean {
+  const lowerPath = path.toLowerCase();
   return (
-    path.includes('/__tests__/') ||
-    path.includes('/tests/') ||
-    path.includes('/test/') ||
-    path.endsWith('.test.ts') ||
-    path.endsWith('.spec.ts') ||
-    path.endsWith('.test.js') ||
-    path.endsWith('.spec.js')
+    lowerPath.includes('__tests__') ||
+    lowerPath.includes('test/') ||
+    lowerPath.includes('tests/') ||
+    lowerPath.endsWith('.test.ts') ||
+    lowerPath.endsWith('.test.js') ||
+    lowerPath.endsWith('.spec.ts') ||
+    lowerPath.endsWith('.spec.js')
   );
 }
 
-export function isDocFile(path: string): boolean {
+function isDocFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
     lowerPath.endsWith('.md') ||
     lowerPath.endsWith('.mdx') ||
     lowerPath.endsWith('.txt') ||
-    lowerPath.includes('/docs/') ||
-    lowerPath === 'license' ||
-    lowerPath === 'readme'
+    lowerPath.includes('docs/')
   );
 }
 
-export function isConfigFile(path: string): boolean {
+function isConfigFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
-    lowerPath.includes('.github/') ||
-    lowerPath.includes('.vscode/') ||
-    lowerPath.includes('tsconfig') ||
-    lowerPath.includes('eslint.config') ||
-    lowerPath.includes('prettier.config') ||
-    lowerPath.includes('jest.config') ||
-    lowerPath.includes('vitest.config') ||
-    lowerPath.endsWith('.yaml') ||
+    lowerPath.endsWith('.json') ||
     lowerPath.endsWith('.yml') ||
-    lowerPath.endsWith('.json')
+    lowerPath.endsWith('.yaml') ||
+    lowerPath.includes('.github/') ||
+    lowerPath.endsWith('.config.js') ||
+    lowerPath.endsWith('.config.ts')
   );
 }
 
-export function isGeneratedFile(path: string): boolean {
+function isLowValueFile(path: string): boolean {
+  const lowerPath = path.toLowerCase();
   return (
-    path.includes('package-lock.json') ||
-    path.includes('pnpm-lock.yaml') ||
-    path.includes('yarn.lock') ||
-    path.includes('/dist/') ||
-    path.includes('/build/') ||
-    path.includes('/coverage/')
+    lowerPath === 'pnpm-lock.yaml' ||
+    lowerPath === 'package-lock.json' ||
+    lowerPath === 'yarn.lock' ||
+    lowerPath.endsWith('.svg') ||
+    lowerPath.endsWith('.png') ||
+    lowerPath.endsWith('.snap')
   );
-}
-
-export function isLowValueFile(path: string): boolean {
-  return isGeneratedFile(path) || isDocFile(path) || isConfigFile(path);
 }

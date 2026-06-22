@@ -1,39 +1,65 @@
-import { execSync } from 'node:child_process';
-import type { FileChange, FileStatus } from './types.js';
+import { execFileSync } from 'node:child_process';
+import type { ChangedFile, FileStatus } from './types.js';
 
-export function getGitDiff(base: string, head: string, cwd: string = process.cwd()): FileChange[] {
-  // Use -M to detect renames, --find-renames
-  const diffCommandOptions = `-M -z ${base}...${head}`;
-  
-  const nameStatusOut = execSync(`git diff --name-status ${diffCommandOptions}`, { cwd, encoding: 'utf8' });
-  const numstatOut = execSync(`git diff --numstat ${diffCommandOptions}`, { cwd, encoding: 'utf8' });
+export interface GitDiffResult {
+  files: ChangedFile[];
+  mergeBase: string;
+}
+
+export function getGitDiff(baseRef: string, headRef: string, cwd: string = process.cwd()): GitDiffResult {
+  // 1. Get merge base
+  let mergeBase: string;
+  try {
+    mergeBase = execFileSync('git', ['merge-base', baseRef, headRef], { cwd, encoding: 'utf8' }).trim();
+  } catch (error) {
+    throw new Error(`Failed to find merge base between ${baseRef} and ${headRef}`, { cause: error });
+  }
+
+  // 2. Run diff commands
+  const diffArgs = ['-M', '-z', mergeBase, headRef];
+  const nameStatusOut = execFileSync('git', ['diff', '--name-status', ...diffArgs], { cwd, encoding: 'utf8' });
+  const numstatOut = execFileSync('git', ['diff', '--numstat', ...diffArgs], { cwd, encoding: 'utf8' });
 
   const statuses = parseNameStatus(nameStatusOut);
   const stats = parseNumstat(numstatOut);
 
-  const files: FileChange[] = [];
+  // 3. Check attributes for linguist-generated
+  const pathsToCheck = Array.from(statuses.keys());
+  let generatedMap = new Map<string, boolean>();
+  if (pathsToCheck.length > 0) {
+    const input = pathsToCheck.join('\0') + '\0';
+    const attrOut = execFileSync('git', ['check-attr', '-z', '--stdin', 'linguist-generated'], {
+      cwd,
+      encoding: 'utf8',
+      input,
+    });
+    generatedMap = parseCheckAttr(attrOut);
+  }
+
+  const files: ChangedFile[] = [];
 
   for (const stat of stats) {
     const statusData = statuses.get(stat.path);
-    // If a file appears in numstat but not name-status, fallback to 'modified'
     const status = statusData || 'modified';
+
+    const isGenerated = generatedMap.get(stat.path) === true;
 
     files.push({
       path: stat.path,
       status,
       additions: stat.additions,
       deletions: stat.deletions,
-      isLowValue: false,
-      isGenerated: false,
+      classification: {
+        isTest: false,
+        isDoc: false,
+        isConfig: false,
+        isGenerated,
+        isLowValue: false,
+      },
     });
   }
 
-  // Handle files that are in nameStatus but not in numstat (e.g. empty files added/deleted, or binary files that numstat might skip if there's no addition/deletion reported?)
-  // Actually, numstat includes binary files as "-\t-\tpath" which our parseNumstat handles as 0 additions/deletions.
-  // Empty files added might show up as "0\t0\tpath".
-  // So stats should have exactly the same files as statuses.
-
-  return files;
+  return { files, mergeBase };
 }
 
 function parseNameStatus(output: string): Map<string, FileStatus> {
@@ -50,7 +76,7 @@ function parseNameStatus(output: string): Map<string, FileStatus> {
       const oldPath = parts[i++]; // eslint-disable-line @typescript-eslint/no-unused-vars
       const newPath = parts[i++];
       if (newPath) {
-        map.set(newPath, code === 'R' ? 'renamed' : 'added');
+        map.set(newPath, code === 'R' ? 'renamed' : 'copied');
       }
     } else {
       const path = parts[i++];
@@ -73,7 +99,7 @@ function parseNumstat(output: string): Array<{ path: string; additions: number; 
   const parts = output.split('\0');
   for (let i = 0; i < parts.length - 1; i++) {
     const chunk = parts[i];
-    if (!chunk) continue; // safety check
+    if (!chunk) continue;
 
     const tabSplit = chunk.split('\t');
     const addsStr = tabSplit[0];
@@ -81,7 +107,7 @@ function parseNumstat(output: string): Array<{ path: string; additions: number; 
     let path = tabSplit[2];
 
     if (path === '') {
-      // It's a rename in numstat
+      // It's a rename or copy
       const oldPath = parts[++i]; // eslint-disable-line @typescript-eslint/no-unused-vars
       const newPath = parts[++i];
       path = newPath;
@@ -96,4 +122,23 @@ function parseNumstat(output: string): Array<{ path: string; additions: number; 
   }
 
   return result;
+}
+
+function parseCheckAttr(output: string): Map<string, boolean> {
+  const map = new Map<string, boolean>();
+  if (!output) return map;
+
+  const parts = output.split('\0');
+  // path, attribute, value
+  for (let i = 0; i < parts.length - 1; i += 3) {
+    const path = parts[i];
+    // const attr = parts[i + 1]; // "linguist-generated"
+    const val = parts[i + 2];
+    
+    if (path && val === 'true') {
+      map.set(path, true);
+    }
+  }
+
+  return map;
 }
