@@ -1,0 +1,31 @@
+{
+  "name": "pr-nutrition",
+  "version": "0.1.0",
+  "description": "A deterministic pull request review-readiness label generator.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "pr-nutrition": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "@pr-nutrition/core": "workspace:*",
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.2",
+    "tsup": "8.5.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  },
+  "scripts": {
+    "build": "tsup",
+    "smoke": "node ./dist/index.js --version && node ./dist/index.js --help"
+  },
+  "engines": {
+    "node": ">=22.13 <27"
+  }
+}
