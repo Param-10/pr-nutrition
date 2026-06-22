@@ -1,15 +1,4 @@
-import type { ChangedFile } from './types.js';
-
-export function classifyFiles(files: ChangedFile[]): void {
-  for (const file of files) {
-    file.classification.isTest = isTestFile(file.path);
-    file.classification.isDoc = isDocFile(file.path);
-    file.classification.isConfig = isConfigFile(file.path);
-    file.classification.isLowValue = file.classification.isGenerated || isLowValueFile(file.path);
-  }
-}
-
-function isTestFile(path: string): boolean {
+export function isTestFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
     lowerPath.includes('__tests__') ||
@@ -22,7 +11,7 @@ function isTestFile(path: string): boolean {
   );
 }
 
-function isDocFile(path: string): boolean {
+export function isDocFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
     lowerPath.endsWith('.md') ||
@@ -32,19 +21,7 @@ function isDocFile(path: string): boolean {
   );
 }
 
-function isConfigFile(path: string): boolean {
-  const lowerPath = path.toLowerCase();
-  return (
-    lowerPath.endsWith('.json') ||
-    lowerPath.endsWith('.yml') ||
-    lowerPath.endsWith('.yaml') ||
-    lowerPath.includes('.github/') ||
-    lowerPath.endsWith('.config.js') ||
-    lowerPath.endsWith('.config.ts')
-  );
-}
-
-function isLowValueFile(path: string): boolean {
+export function isLowValueFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
     lowerPath === 'pnpm-lock.yaml' ||
@@ -54,4 +31,36 @@ function isLowValueFile(path: string): boolean {
     lowerPath.endsWith('.png') ||
     lowerPath.endsWith('.snap')
   );
+}
+
+// Risk Area Matchers
+
+export function isMigration(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.includes('migrations/') || lowerPath.includes('db/migrate/');
+}
+
+export function isAuthentication(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.includes('auth/') || lowerPath.includes('security/') || lowerPath.includes('login') || lowerPath.includes('permissions') || lowerPath.includes('roles');
+}
+
+export function isCI(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.includes('.github/workflows/') || lowerPath.includes('.circleci/') || lowerPath.includes('.gitlab-ci.yml');
+}
+
+export function isApiContract(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.includes('api/') || lowerPath.includes('openapi.yaml') || lowerPath.includes('swagger') || lowerPath.includes('types/') || lowerPath.includes('interfaces/');
+}
+
+export function isDependencyManifest(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.endsWith('package.json') || lowerPath === 'yarn.lock' || lowerPath === 'pnpm-lock.yaml' || lowerPath === 'package-lock.json';
+}
+
+export function isConfiguration(path: string): boolean {
+  const lowerPath = path.toLowerCase();
+  return lowerPath.endsWith('.env') || lowerPath.includes('config/') || lowerPath.includes('.config.') || lowerPath.endsWith('rc') || lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml');
 }

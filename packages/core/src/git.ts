@@ -49,13 +49,8 @@ export function getGitDiff(baseRef: string, headRef: string, cwd: string = proce
       status,
       additions: stat.additions,
       deletions: stat.deletions,
-      classification: {
-        isTest: false,
-        isDoc: false,
-        isConfig: false,
-        isGenerated,
-        isLowValue: false,
-      },
+      isGenerated,
+      isLowValue: false,
     });
   }
 
