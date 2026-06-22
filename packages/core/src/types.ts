@@ -19,8 +19,13 @@ export interface ChangedFile {
 }
 
 export interface RepositoryEvidence {
-  hasTests: boolean;
-  hasDocs: boolean;
+  hasChangedTests: boolean;
+  hasChangedDocs: boolean;
+  hasPackageManifest: boolean;
+  packageManager: 'npm' | 'yarn' | 'pnpm' | 'unknown';
+  hasTestScript: boolean;
+  hasTypecheckScript: boolean;
+  hasCiWorkflow: boolean;
 }
 
 export interface RiskReason {
@@ -51,7 +56,7 @@ export interface AnalysisResult {
     reasons: RiskReason[];
   };
   evidence: RepositoryEvidence;
-  lowReviewValueFiles: string[];
+  lowReviewValueFiles: ChangedFile[];
   reviewFocus: string[];
   warnings: string[];
 }

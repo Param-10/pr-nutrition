@@ -113,9 +113,35 @@ describe('Core Analyzer', () => {
 
     expect(Array.isArray(result.files)).toBe(true);
     expect(result.areas).toBeDefined();
+    expect(typeof result.areas.hasMigrations).toBe('boolean');
+    expect(typeof result.areas.hasAuthentication).toBe('boolean');
+    expect(typeof result.areas.hasCI).toBe('boolean');
+    expect(typeof result.areas.hasApiContracts).toBe('boolean');
+    expect(typeof result.areas.hasDependencies).toBe('boolean');
+    expect(typeof result.areas.hasConfiguration).toBe('boolean');
+    
     expect(result.risk).toBeDefined();
+    
+    // Check expanded evidence
     expect(result.evidence).toBeDefined();
+    expect(typeof result.evidence.hasChangedTests).toBe('boolean');
+    expect(typeof result.evidence.hasChangedDocs).toBe('boolean');
+    expect(typeof result.evidence.hasPackageManifest).toBe('boolean');
+    expect(typeof result.evidence.packageManager).toBe('string');
+    expect(typeof result.evidence.hasTestScript).toBe('boolean');
+    expect(typeof result.evidence.hasTypecheckScript).toBe('boolean');
+    expect(typeof result.evidence.hasCiWorkflow).toBe('boolean');
+
+    // lowReviewValueFiles must be full objects
     expect(Array.isArray(result.lowReviewValueFiles)).toBe(true);
+    if (result.lowReviewValueFiles.length > 0) {
+      const lrvf = result.lowReviewValueFiles[0];
+      expect(lrvf.path).toBeDefined();
+      expect(lrvf.status).toBeDefined();
+      expect(typeof lrvf.additions).toBe('number');
+      expect(lrvf.isLowValue).toBe(true);
+    }
+
     expect(Array.isArray(result.reviewFocus)).toBe(true);
     expect(Array.isArray(result.warnings)).toBe(true);
   });
@@ -141,10 +167,71 @@ describe('Core Analyzer', () => {
     expect(result.risk.level).toBe('high');
   });
 
+  it('correctly populates repository evidence from disk', () => {
+    // Write valid package.json with scripts
+    writeFileSync(join(tmpRepo, 'package.json'), JSON.stringify({ scripts: { test: 'vitest', typecheck: 'tsc' } }));
+    const result = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'head-branch' });
+    
+    expect(result.evidence.hasPackageManifest).toBe(true);
+    expect(result.evidence.hasTestScript).toBe(true);
+    expect(result.evidence.hasTypecheckScript).toBe(true);
+    expect(result.evidence.packageManager).toBe('pnpm'); // from pnpm-lock.yaml
+    expect(result.evidence.hasCiWorkflow).toBe(true); // from .github/workflows/ci.yml
+  });
+
+  it('malformed package.json warns but does not fail', () => {
+    writeFileSync(join(tmpRepo, 'package.json'), '{"malformed": "json"');
+    const result = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'head-branch' });
+    
+    expect(result.evidence.hasPackageManifest).toBe(true);
+    expect(result.evidence.hasTestScript).toBe(false);
+    expect(result.warnings).toContain('package.json is malformed');
+  });
+
+  it('prioritizes CI and API over configuration', () => {
+    // Generate openapi.yaml and an extra ci yaml in a new branch
+    run(['checkout', '-b', 'priority', 'base-branch']);
+    writeFileSync(join(tmpRepo, 'openapi.yaml'), 'openapi: 3.0.0\n');
+    writeFileSync(join(tmpRepo, '.github/workflows/deploy.yml'), 'name: Deploy\n');
+    run(['add', '.']);
+    run(['commit', '-m', 'add prioritized files']);
+
+    const result = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'priority' });
+    
+    // Should trigger API (openapi.yaml) and CI (deploy.yml)
+    expect(result.areas.hasApiContracts).toBe(true);
+    expect(result.areas.hasCI).toBe(true);
+    
+    // BUT should NOT trigger Configuration (which also matches .yaml)
+    expect(result.areas.hasConfiguration).toBe(false);
+
+    // Score should be 15 (API) + 20 (CI) = 35 + 0 (Size, < 10 files) = 35
+    expect(result.risk.score).toBe(35);
+  });
+
+  it('counts risk category once globally, not per file', () => {
+    run(['checkout', '-b', 'multiple-api', 'base-branch']);
+    mkdirSync(join(tmpRepo, 'api', 'v1'), { recursive: true });
+    writeFileSync(join(tmpRepo, 'api/routes.ts'), 'export const r = [];\n');
+    writeFileSync(join(tmpRepo, 'api/v1/users.ts'), 'export const u = [];\n');
+    writeFileSync(join(tmpRepo, 'openapi.yaml'), 'openapi: 3.0.0\n');
+    run(['add', '.']);
+    run(['commit', '-m', 'multiple api files']);
+
+    const result = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'multiple-api' });
+    
+    expect(result.areas.hasApiContracts).toBe(true);
+    expect(result.areas.hasCI).toBe(false);
+    expect(result.areas.hasConfiguration).toBe(false);
+    
+    // Score should be 15 (API) * 1 = 15. Not 15 * 3 = 45.
+    expect(result.risk.score).toBe(15);
+  });
+
   it('proves missing tests do not increase score and present tests do not decrease score', () => {
     // We already have a test file (a.test.ts) in 'head-branch'
     const withTests = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'head-branch' });
-    expect(withTests.evidence.hasTests).toBe(true);
+    expect(withTests.evidence.hasChangedTests).toBe(true);
     expect(withTests.risk.score).toBe(130); // Just risk areas, size=10, test impact=0
 
     // Let's create a branch without tests
@@ -153,7 +240,7 @@ describe('Core Analyzer', () => {
     run(['commit', '-m', 'remove tests']);
     
     const withoutTests = analyzePullRequest({ repoPath: tmpRepo, baseRef: 'base-branch', headRef: 'no-tests' });
-    expect(withoutTests.evidence.hasTests).toBe(false);
+    expect(withoutTests.evidence.hasChangedTests).toBe(false);
     
     // The score should STILL be exactly the same, because tests do not add/subtract points
     // (Wait, 'a.test.ts' removal adds a deletion, but still size +10).
