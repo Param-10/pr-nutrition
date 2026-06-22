@@ -1,2 +1,5 @@
-// The deterministic analyzer is introduced in the next pull request.
-export {};
+export * from './types.js';
+export * from './git.js';
+export * from './classifier.js';
+export * from './scorer.js';
+export * from './analyzer.js';
