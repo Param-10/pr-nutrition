@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "comparison": {
-    "repoPath": "/var/folders/dz/gf832gyn2hl_0qt1jjq7g7s00000gn/T/pr-nutrition-examples-WlCyFS",
+    "repoPath": ".",
     "baseRef": "HEAD~1",
     "headRef": "HEAD",
-    "mergeBase": "c4b1cee089110ff2fda9b521708881d154b7bc60"
+    "mergeBase": "1632d1f87b3d1e7c0b5eca9f9c37385f219bb6fc"
   },
   "summary": {
     "filesChanged": 4,
@@ -19,6 +19,7 @@
       "status": "modified",
       "additions": 1,
       "deletions": 0,
+      "isBinary": false,
       "isGenerated": false,
       "isLowValue": false
     },
@@ -27,6 +28,7 @@
       "status": "modified",
       "additions": 2,
       "deletions": 0,
+      "isBinary": false,
       "isGenerated": false,
       "isLowValue": false
     },
@@ -35,6 +37,7 @@
       "status": "modified",
       "additions": 2,
       "deletions": 0,
+      "isBinary": false,
       "isGenerated": false,
       "isLowValue": true
     },
@@ -43,36 +46,59 @@
       "status": "modified",
       "additions": 2,
       "deletions": 1,
+      "isBinary": false,
       "isGenerated": false,
       "isLowValue": false
     }
   ],
-  "areas": {
-    "hasMigrations": false,
-    "hasAuthentication": true,
-    "hasCI": true,
-    "hasApiContracts": true,
-    "hasDependencies": true,
-    "hasConfiguration": false
-  },
+  "areas": [
+    {
+      "id": "authentication",
+      "label": "Authentication and security",
+      "files": [
+        "src/auth/session.ts"
+      ]
+    },
+    {
+      "id": "ci",
+      "label": "CI and workflows",
+      "files": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "api",
+      "label": "API and public contracts",
+      "files": [
+        "openapi.yaml"
+      ]
+    },
+    {
+      "id": "dependencies",
+      "label": "Dependencies",
+      "files": [
+        "pnpm-lock.yaml"
+      ]
+    }
+  ],
   "risk": {
     "score": 75,
     "level": "high",
     "reasons": [
       {
-        "description": "Touched authentication/security paths",
+        "description": "Touched authentication and security",
         "points": 25
       },
       {
-        "description": "Touched CI/workflows",
+        "description": "Touched ci and workflows",
         "points": 20
       },
       {
-        "description": "Touched API/public contracts",
+        "description": "Touched api and public contracts",
         "points": 15
       },
       {
-        "description": "Touched dependency manifests/lockfiles",
+        "description": "Touched dependencies",
         "points": 15
       }
     ]
@@ -81,6 +107,9 @@
     "hasChangedTests": false,
     "hasChangedDocs": false,
     "hasPackageManifest": true,
+    "manifests": [
+      "package.json"
+    ],
     "packageManager": "pnpm",
     "hasTestScript": true,
     "hasTypecheckScript": true,
@@ -92,14 +121,17 @@
       "status": "modified",
       "additions": 2,
       "deletions": 0,
+      "isBinary": false,
       "isGenerated": false,
       "isLowValue": true
     }
   ],
   "reviewFocus": [
-    "Production changes without tests"
+    "Review authentication, authorization, and session edge cases.",
+    "Review workflow permissions, triggers, and use of untrusted inputs.",
+    "Review backward compatibility of public API or contract changes.",
+    "Review dependency provenance, lockfile changes, and install scripts.",
+    "Production changes detected without changed tests; verify coverage."
   ],
-  "warnings": [
-    "Production changes without tests"
-  ]
+  "warnings": []
 }

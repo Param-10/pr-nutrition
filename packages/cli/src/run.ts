@@ -1,5 +1,4 @@
 import { Command, CommanderError } from "commander";
-import path from "node:path";
 import { writeFileSync } from "node:fs";
 import { analyzePullRequest, renderMarkdown, renderJson } from "@pr-nutrition/core";
 
@@ -53,9 +52,8 @@ export async function runCli(
   }
 
   try {
-    const repoPath = path.resolve(options.repo);
     const analysis = await analyzePullRequest({
-      repoPath,
+      repoPath: options.repo,
       baseRef: options.base,
       headRef: options.head,
     });

@@ -8,7 +8,7 @@ PR Nutrition guarantees a secure, local-first analysis model.
 - Git numstat metadata (additions/deletions)
 - Git attributes (e.g. for `linguist-generated`)
 - `package.json` scripts
-- Lockfile presence
+- Approved manifest and lockfile presence
 - Workflow filenames
 
 ## Disallowed (What it Never Inspects)
@@ -18,3 +18,5 @@ PR Nutrition guarantees a secure, local-first analysis model.
 - Secrets
 - Network calls
 - LLM calls in v0.1
+
+Git is executed directly without a shell. The analyzer uses only merge-base, name/status, numstat, and generated-attribute metadata; it never requests patch bodies.

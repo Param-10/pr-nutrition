@@ -13,9 +13,9 @@ The analyzer intentionally completely avoids reading or leaking:
 - `.env` files and values
 - Secrets and tokens
 - Repository source code (source files are not read or uploaded)
-- CI metadata
+- Workflow contents or CI secrets
 
-Only file paths and generic repository manifest paths (`package.json`, lockfiles) are used.
+Only file paths, counts, Git attributes, approved manifest presence, `package.json` script names, lockfile presence, and workflow filenames are used.
 
 ## Reporting a Vulnerability
 

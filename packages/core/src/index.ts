@@ -5,6 +5,9 @@ export type {
   AnalyzeOptions,
   ChangedFile,
   AreaClassification,
+  FileStatus,
+  PackageManager,
   RepositoryEvidence,
+  RiskAreaId,
   RiskReason,
 } from "./types.js";

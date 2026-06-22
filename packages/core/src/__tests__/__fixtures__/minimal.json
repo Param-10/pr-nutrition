@@ -14,14 +14,7 @@
     "reviewableLines": 15
   },
   "files": [],
-  "areas": {
-    "hasMigrations": false,
-    "hasAuthentication": false,
-    "hasCI": false,
-    "hasApiContracts": false,
-    "hasDependencies": false,
-    "hasConfiguration": false
-  },
+  "areas": [],
   "risk": {
     "score": 0,
     "level": "low",
@@ -31,6 +24,7 @@
     "hasChangedTests": false,
     "hasChangedDocs": false,
     "hasPackageManifest": false,
+    "manifests": [],
     "packageManager": "unknown",
     "hasTestScript": false,
     "hasTypecheckScript": false,

@@ -1,139 +1,146 @@
-import { join } from 'node:path';
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import type { AnalysisResult, AnalyzeOptions, AreaClassification, RepositoryEvidence, ChangedFile } from './types.js';
-import { getGitDiff } from './git.js';
-import { calculateRisk } from './scorer.js';
-import {
-  isTestFile,
-  isDocFile,
-  isLowValueFile,
-  getRiskArea
-} from './classifier.js';
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, RISK_AREAS } from "./classifier.js";
+import { getGitDiff } from "./git.js";
+import { calculateRisk } from "./scorer.js";
+import type { AnalysisResult, AnalyzeOptions, AreaClassification, ChangedFile, PackageManager, RepositoryEvidence, RiskAreaId } from "./types.js";
 
-export function analyzePullRequest(options: AnalyzeOptions): AnalysisResult {
-  const { repoPath, baseRef, headRef } = options;
-  const { files, mergeBase } = getGitDiff(baseRef, headRef, repoPath);
+const MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"] as const;
+const MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
 
-  const warnings: string[] = [];
-  const reviewFocus: string[] = [];
-  const lowReviewValueFiles: ChangedFile[] = [];
+function detectPackageManager(repoPath: string): PackageManager {
+  const candidates: ReadonlyArray<[string, PackageManager]> = [
+    ["pnpm-lock.yaml", "pnpm"],
+    ["yarn.lock", "yarn"],
+    ["package-lock.json", "npm"],
+    ["uv.lock", "uv"],
+    ["poetry.lock", "poetry"],
+    ["Cargo.lock", "cargo"],
+    ["go.mod", "go"],
+  ];
+  return candidates.find(([path]) => existsSync(join(repoPath, path)))?.[1] ?? "unknown";
+}
 
-  let filesChanged = 0;
-  let additions = 0;
-  let deletions = 0;
-  let reviewableFiles = 0;
-  let reviewableLines = 0;
-
-  const areas: AreaClassification = {
-    hasMigrations: false,
-    hasAuthentication: false,
-    hasCI: false,
-    hasApiContracts: false,
-    hasDependencies: false,
-    hasConfiguration: false,
-  };
-
+function collectRepositoryEvidence(repoPath: string, warnings: string[]): RepositoryEvidence {
+  const manifests = MANIFESTS.filter((manifest) => existsSync(join(repoPath, manifest)));
   const evidence: RepositoryEvidence = {
     hasChangedTests: false,
     hasChangedDocs: false,
-    hasPackageManifest: false,
-    packageManager: 'unknown',
+    hasPackageManifest: manifests.length > 0,
+    manifests: [...manifests],
+    packageManager: detectPackageManager(repoPath),
     hasTestScript: false,
     hasTypecheckScript: false,
     hasCiWorkflow: false,
   };
 
-  // Evaluate Repository Evidence from Disk
-  try {
-    const pkgPath = join(repoPath, 'package.json');
-    if (existsSync(pkgPath)) {
-      evidence.hasPackageManifest = true;
-      try {
-        const pkgContent = readFileSync(pkgPath, 'utf8');
-        const pkg = JSON.parse(pkgContent);
-        if (pkg.scripts) {
-          if (pkg.scripts.test) evidence.hasTestScript = true;
-          if (pkg.scripts.typecheck) evidence.hasTypecheckScript = true;
-        }
-      } catch {
-        warnings.push('package.json is malformed');
+  const packageJsonPath = join(repoPath, "package.json");
+  if (existsSync(packageJsonPath)) {
+    try {
+      const metadata = lstatSync(packageJsonPath);
+      if (!metadata.isFile()) {
+        warnings.push("package.json is not a regular file and was not inspected");
+      } else if (metadata.size > MAX_PACKAGE_JSON_BYTES) {
+        warnings.push("package.json exceeds the 1 MiB inspection limit");
+      } else {
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { scripts?: Record<string, unknown> };
+        evidence.hasTestScript = typeof packageJson.scripts?.test === "string";
+        evidence.hasTypecheckScript = typeof packageJson.scripts?.typecheck === "string";
       }
+    } catch {
+      warnings.push("package.json is malformed or unreadable");
     }
-  } catch {
-    // Ignore permissions/read errors
   }
 
-  // Detect Package Manager from lockfiles
-  if (existsSync(join(repoPath, 'pnpm-lock.yaml'))) {
-    evidence.packageManager = 'pnpm';
-  } else if (existsSync(join(repoPath, 'yarn.lock'))) {
-    evidence.packageManager = 'yarn';
-  } else if (existsSync(join(repoPath, 'package-lock.json'))) {
-    evidence.packageManager = 'npm';
-  }
-
-  // Detect CI Workflows
   try {
-    const workflowsPath = join(repoPath, '.github/workflows');
-    if (existsSync(workflowsPath)) {
-      const filesInWorkflows = readdirSync(workflowsPath);
-      for (const file of filesInWorkflows) {
-        if (file.endsWith('.yml') || file.endsWith('.yaml')) {
-          evidence.hasCiWorkflow = true;
-          break;
-        }
-      }
-    }
+    const workflowPath = join(repoPath, ".github", "workflows");
+    evidence.hasCiWorkflow =
+      existsSync(workflowPath) &&
+      lstatSync(workflowPath).isDirectory() &&
+      readdirSync(workflowPath).some((file) => /\.ya?ml$/i.test(file));
   } catch {
-    // Ignore permissions/read errors
+    warnings.push("Could not inspect GitHub workflow filenames");
   }
 
-  // Evaluate PR-Specific Changes
-  for (const file of files) {
-    filesChanged++;
+  return evidence;
+}
+
+function buildAreas(areaFiles: Map<RiskAreaId, string[]>): AreaClassification[] {
+  return RISK_AREAS.flatMap((definition) => {
+    const files = areaFiles.get(definition.id);
+    return files === undefined
+      ? []
+      : [{ id: definition.id, label: definition.label, files: [...files].sort() }];
+  });
+}
+
+function buildReviewFocus(areas: AreaClassification[], hasUncoveredProductionChanges: boolean): string[] {
+  const activeAreas = new Set(areas.map((area) => area.id));
+  const focus = RISK_AREAS.filter((definition) => activeAreas.has(definition.id)).map(
+    (definition) => definition.focus,
+  );
+  if (hasUncoveredProductionChanges) {
+    focus.push("Production changes detected without changed tests; verify coverage.");
+  }
+  return focus.slice(0, 5);
+}
+
+export async function analyzePullRequest(options: AnalyzeOptions): Promise<AnalysisResult> {
+  const resolvedRepoPath = resolve(options.repoPath);
+  const gitDiff = getGitDiff(options.baseRef, options.headRef, resolvedRepoPath);
+  const warnings = [...gitDiff.warnings];
+  const evidence = collectRepositoryEvidence(resolvedRepoPath, warnings);
+  const areaFiles = new Map<RiskAreaId, string[]>();
+  const lowReviewValueFiles: ChangedFile[] = [];
+  let additions = 0;
+  let deletions = 0;
+  let reviewableFiles = 0;
+  let reviewableLines = 0;
+  let hasTestRelevantChanges = false;
+
+  const files = gitDiff.files.map((gitFile): ChangedFile => {
+    const isGenerated = gitFile.isGenerated || isGeneratedFile(gitFile.path);
+    const isLowValue = isGenerated || gitFile.isBinary || isLowValueFile(gitFile.path);
+    const file = { ...gitFile, isGenerated, isLowValue };
+    const classificationPaths = [file.path, ...(file.previousPath === undefined ? [] : [file.previousPath])];
+
     additions += file.additions;
     deletions += file.deletions;
-
-    file.isLowValue = file.isGenerated || isLowValueFile(file.path);
-
-    if (file.isLowValue) {
+    if (isLowValue) {
       lowReviewValueFiles.push(file);
     } else {
       reviewableFiles++;
       reviewableLines += file.additions + file.deletions;
     }
 
-    if (isTestFile(file.path)) evidence.hasChangedTests = true;
-    if (isDocFile(file.path)) evidence.hasChangedDocs = true;
+    evidence.hasChangedTests ||= classificationPaths.some(isTestFile);
+    evidence.hasChangedDocs ||= classificationPaths.some(isDocFile);
+    hasTestRelevantChanges ||= !isLowValue && classificationPaths.some(isTestRelevantFile);
 
-    // Apply strict priority classification
-    const riskArea = getRiskArea(file.path);
-    if (riskArea === 'migrations') areas.hasMigrations = true;
-    else if (riskArea === 'authentication') areas.hasAuthentication = true;
-    else if (riskArea === 'ci') areas.hasCI = true;
-    else if (riskArea === 'api') areas.hasApiContracts = true;
-    else if (riskArea === 'dependencies') areas.hasDependencies = true;
-    else if (riskArea === 'configuration') areas.hasConfiguration = true;
-  }
+    const riskArea = classificationPaths.map(getRiskArea).find((area) => area !== undefined);
+    if (riskArea !== undefined) {
+      const paths = areaFiles.get(riskArea) ?? [];
+      paths.push(file.path);
+      areaFiles.set(riskArea, paths);
+    }
 
+    return file;
+  });
+
+  const areas = buildAreas(areaFiles);
   const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
-
-  if (reviewableLines > 0 && !evidence.hasChangedTests) {
-    const msg = 'Production changes without tests';
-    reviewFocus.push(msg);
-    warnings.push(msg);
-  }
+  const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
 
   return {
     schemaVersion: 1,
     comparison: {
-      repoPath,
-      baseRef,
-      headRef,
-      mergeBase,
+      repoPath: options.repoPath,
+      baseRef: options.baseRef,
+      headRef: options.headRef,
+      mergeBase: gitDiff.mergeBase,
     },
     summary: {
-      filesChanged,
+      filesChanged: files.length,
       additions,
       deletions,
       reviewableFiles,

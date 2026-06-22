@@ -12,4 +12,5 @@
 - [ ] I ran `pnpm typecheck`
 - [ ] I ran `pnpm lint`
 - [ ] I ran `pnpm build`
+- [ ] I ran `pnpm smoke`
 - [ ] I did not add network calls, LLM calls, or patch-content reading without discussion

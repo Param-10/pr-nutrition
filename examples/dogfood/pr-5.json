@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "comparison": {
+    "repoPath": ".",
+    "baseRef": "f8d8f09abc807209d47d40468b28e4dc41d7b6b0",
+    "headRef": "028432b1d1376c435ceb2e62d618234c80908133",
+    "mergeBase": "f8d8f09abc807209d47d40468b28e4dc41d7b6b0"
+  },
+  "summary": {
+    "filesChanged": 17,
+    "additions": 664,
+    "deletions": 3,
+    "reviewableFiles": 17,
+    "reviewableLines": 667
+  },
+  "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "status": "added",
+      "additions": 57,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/false_positive.yml",
+      "status": "added",
+      "additions": 36,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "status": "added",
+      "additions": 36,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "status": "added",
+      "additions": 15,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "status": "added",
+      "additions": 23,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "status": "added",
+      "additions": 68,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "README.md",
+      "status": "modified",
+      "additions": 62,
+      "deletions": 2,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "ROADMAP.md",
+      "status": "added",
+      "additions": 25,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "SECURITY.md",
+      "status": "added",
+      "additions": 25,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "docs/architecture.md",
+      "status": "added",
+      "additions": 19,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "docs/privacy.md",
+      "status": "added",
+      "additions": 20,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "docs/release-process.md",
+      "status": "added",
+      "additions": 26,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "examples/README.md",
+      "status": "added",
+      "additions": 13,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "examples/demo-pr/pr-nutrition.json",
+      "status": "added",
+      "additions": 105,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "examples/demo-pr/pr-nutrition.md",
+      "status": "added",
+      "additions": 47,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "packages/cli/package.json",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "scripts/generate-examples.mjs",
+      "status": "added",
+      "additions": 85,
+      "deletions": 0,
+      "isBinary": false,
+      "isGenerated": false,
+      "isLowValue": false
+    }
+  ],
+  "areas": [
+    {
+      "id": "dependencies",
+      "label": "Dependencies",
+      "files": [
+        "packages/cli/package.json"
+      ]
+    },
+    {
+      "id": "configuration",
+      "label": "Configuration and environment",
+      "files": [
+        ".github/ISSUE_TEMPLATE/bug_report.yml",
+        ".github/ISSUE_TEMPLATE/false_positive.yml",
+        ".github/ISSUE_TEMPLATE/feature_request.yml",
+        "examples/demo-pr/pr-nutrition.json"
+      ]
+    }
+  ],
+  "risk": {
+    "score": 40,
+    "level": "medium",
+    "reasons": [
+      {
+        "description": "Touched dependencies",
+        "points": 15
+      },
+      {
+        "description": "Touched configuration and environment",
+        "points": 15
+      },
+      {
+        "description": "Size: at least 10 files or 200 lines",
+        "points": 10
+      }
+    ]
+  },
+  "evidence": {
+    "hasChangedTests": false,
+    "hasChangedDocs": true,
+    "hasPackageManifest": true,
+    "manifests": [
+      "package.json"
+    ],
+    "packageManager": "pnpm",
+    "hasTestScript": true,
+    "hasTypecheckScript": true,
+    "hasCiWorkflow": true
+  },
+  "lowReviewValueFiles": [],
+  "reviewFocus": [
+    "Review dependency provenance, lockfile changes, and install scripts.",
+    "Review configuration defaults and environment-specific behavior."
+  ],
+  "warnings": []
+}

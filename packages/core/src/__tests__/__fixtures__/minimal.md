@@ -13,6 +13,7 @@
 
 - Package manager: Unknown
 - Package manifest: No
+- Manifests: None
 - Test script: No
 - Typecheck script: No
 - CI workflow: No

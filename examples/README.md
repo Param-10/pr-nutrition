@@ -1,6 +1,9 @@
 # PR Nutrition Examples
 
-This directory contains snapshots and sample outputs generated from controlled fixture repositories or dogfood runs using the `pr-nutrition` CLI.
+This directory contains two kinds of byte-stable output:
+
+- `demo-pr`: generated from a controlled temporary repository.
+- `dogfood`: generated from PR Nutrition's own merged PR 5 commit range.
 
 ## How to Regenerate Examples
 

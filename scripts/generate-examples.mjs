@@ -8,15 +8,20 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
-const cliPath = path.join(workspaceRoot, 'packages', 'cli', 'dist', 'index.js');
+const cliPath = path.join(workspaceRoot, 'packages', 'cli', 'dist', 'index.cjs');
 const examplesDir = path.join(workspaceRoot, 'examples', 'demo-pr');
+const deterministicGitEnv = {
+  ...process.env,
+  GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z',
+  GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z'
+};
 
 function run(cmd, args, options = {}) {
   return execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', ...options });
 }
 
 function git(repoPath, args) {
-  return run('git', args, { cwd: repoPath });
+  return run('git', args, { cwd: repoPath, env: deterministicGitEnv });
 }
 
 console.log('Building CLI...');
@@ -60,22 +65,22 @@ try {
   console.log('Generating Markdown example...');
   run('node', [
     cliPath,
-    '--repo', tmpRepo,
+    '--repo', '.',
     '--base', 'HEAD~1',
     '--head', 'HEAD',
     '--format', 'markdown',
     '--output', path.join(examplesDir, 'pr-nutrition.md')
-  ], { cwd: workspaceRoot });
+  ], { cwd: tmpRepo });
 
   console.log('Generating JSON example...');
   run('node', [
     cliPath,
-    '--repo', tmpRepo,
+    '--repo', '.',
     '--base', 'HEAD~1',
     '--head', 'HEAD',
     '--format', 'json',
     '--output', path.join(examplesDir, 'pr-nutrition.json')
-  ], { cwd: workspaceRoot });
+  ], { cwd: tmpRepo });
 
   console.log('Examples generated successfully!');
 

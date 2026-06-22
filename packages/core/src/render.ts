@@ -11,10 +11,14 @@ function titleCaseRisk(level: 'low' | 'medium' | 'high'): 'Low' | 'Medium' | 'Hi
 }
 
 function displayPath(path: string): string {
-  return path
-    .replace(/\r/g, '\\r')
-    .replace(/\n/g, '\\n')
-    .replace(/\t/g, '\\t');
+  return Array.from(path, (character) => {
+    const code = character.charCodeAt(0);
+    if (code > 0x1f && code !== 0x7f) return character;
+    if (character === '\r') return '\\r';
+    if (character === '\n') return '\\n';
+    if (character === '\t') return '\\t';
+    return `\\x${code.toString(16).padStart(2, '0')}`;
+  }).join('');
 }
 
 function inlineCode(value: string): string {
@@ -77,6 +81,15 @@ export function renderMarkdown(result: AnalysisResult): string {
   ];
   parts.push(scopeLines.join('\n'));
 
+  if (result.areas.length > 0) {
+    const areaLines = ['## Changed areas', ''];
+    for (const area of result.areas) {
+      const count = area.files.length;
+      areaLines.push(`- ${area.label}: ${count} ${count === 1 ? 'file' : 'files'}`);
+    }
+    parts.push(areaLines.join('\n'));
+  }
+
   // Review Focus
   if (result.reviewFocus.length > 0) {
     const focusLines = ['## Review focus', ''];
@@ -105,6 +118,7 @@ export function renderMarkdown(result: AnalysisResult): string {
     '',
     `- Package manager: ${pkgMgrDisplay}`,
     `- Package manifest: ${boolText(result.evidence.hasPackageManifest)}`,
+    `- Manifests: ${result.evidence.manifests.length > 0 ? result.evidence.manifests.map(inlineCode).join(', ') : 'None'}`,
     `- Test script: ${boolText(result.evidence.hasTestScript)}`,
     `- Typecheck script: ${boolText(result.evidence.hasTypecheckScript)}`,
     `- CI workflow: ${boolText(result.evidence.hasCiWorkflow)}`,
@@ -128,7 +142,11 @@ export function renderMarkdown(result: AnalysisResult): string {
     const toShow = result.lowReviewValueFiles.slice(0, limit);
     for (const file of toShow) {
       const safePath = inlineCode(displayPath(file.path));
-      lrvfLines.push(`- ${safePath} — ${file.status}, +${file.additions} / -${file.deletions}`);
+      const previousPath = file.previousPath === undefined
+        ? ''
+        : `${inlineCode(displayPath(file.previousPath))} → `;
+      const binary = file.isBinary ? ', binary' : '';
+      lrvfLines.push(`- ${previousPath}${safePath} — ${file.status}${binary}, +${file.additions} / -${file.deletions}`);
     }
 
     if (count > limit) {

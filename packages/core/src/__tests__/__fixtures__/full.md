@@ -9,6 +9,10 @@
 - Base: `main`
 - Head: `HEAD`
 
+## Changed areas
+
+- Authentication and security: 1 file
+
 ## Review focus
 
 - Production changes without tests
@@ -23,6 +27,7 @@
 
 - Package manager: `pnpm`
 - Package manifest: Yes
+- Manifests: `package.json`
 - Test script: Yes
 - Typecheck script: Yes
 - CI workflow: Yes

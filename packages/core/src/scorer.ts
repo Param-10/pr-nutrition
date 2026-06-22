@@ -1,58 +1,31 @@
-import type { AreaClassification, RiskReason } from './types.js';
+import { RISK_AREAS } from "./classifier.js";
+import type { AreaClassification, RiskReason } from "./types.js";
 
 export function calculateRisk(
   reviewableFiles: number,
   reviewableLines: number,
-  areas: AreaClassification
-): { score: number; level: 'low' | 'medium' | 'high'; reasons: RiskReason[] } {
-  let score = 0;
+  areas: AreaClassification[],
+): { score: number; level: "low" | "medium" | "high"; reasons: RiskReason[] } {
+  let rawScore = 0;
   const reasons: RiskReason[] = [];
+  const activeAreas = new Set(areas.map((area) => area.id));
 
-  // Size scoring (highest band only)
+  for (const definition of RISK_AREAS) {
+    if (!activeAreas.has(definition.id)) continue;
+    rawScore += definition.points;
+    reasons.push({ description: `Touched ${definition.label.toLowerCase()}`, points: definition.points });
+  }
+
   if (reviewableFiles >= 30 || reviewableLines >= 800) {
-    score += 20;
-    reasons.push({ description: `Size: >= 30 files or 800 lines`, points: 20 });
+    rawScore += 20;
+    reasons.push({ description: "Size: at least 30 files or 800 lines", points: 20 });
   } else if (reviewableFiles >= 10 || reviewableLines >= 200) {
-    score += 10;
-    reasons.push({ description: `Size: >= 10 files or 200 lines`, points: 10 });
+    rawScore += 10;
+    reasons.push({ description: "Size: at least 10 files or 200 lines", points: 10 });
   }
 
-  // Risk category weights
-  if (areas.hasMigrations) {
-    score += 30;
-    reasons.push({ description: `Touched database migrations`, points: 30 });
-  }
-  if (areas.hasAuthentication) {
-    score += 25;
-    reasons.push({ description: `Touched authentication/security paths`, points: 25 });
-  }
-  if (areas.hasCI) {
-    score += 20;
-    reasons.push({ description: `Touched CI/workflows`, points: 20 });
-  }
-  if (areas.hasApiContracts) {
-    score += 15;
-    reasons.push({ description: `Touched API/public contracts`, points: 15 });
-  }
-  if (areas.hasDependencies) {
-    score += 15;
-    reasons.push({ description: `Touched dependency manifests/lockfiles`, points: 15 });
-  }
-  if (areas.hasConfiguration) {
-    score += 15;
-    reasons.push({ description: `Touched configuration/environment paths`, points: 15 });
-  }
+  const score = Math.min(rawScore, 100);
+  const level = score >= 50 ? "high" : score >= 20 ? "medium" : "low";
 
-  let level: 'low' | 'medium' | 'high' = 'low';
-  if (score >= 60) {
-    level = 'high';
-  } else if (score >= 30) {
-    level = 'medium';
-  }
-
-  return {
-    score,
-    level,
-    reasons,
-  };
+  return { score, level, reasons };
 }

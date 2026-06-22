@@ -5,6 +5,7 @@
 - markdown/json renderers
 - CLI package
 - docs and examples
+- generated and low-review-value path heuristics
 
 ## v0.2
 - GitHub Action
@@ -14,7 +15,7 @@
 
 ## v0.3
 - CI result integration
-- generated file improvements
+- additional generated-file ecosystems
 - PR body/comment integration
 
 ## Later

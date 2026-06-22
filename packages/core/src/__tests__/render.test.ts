@@ -26,14 +26,9 @@ const fullResult: AnalysisResult = {
     reviewableLines: 250
   },
   files: [],
-  areas: {
-    hasMigrations: false,
-    hasAuthentication: true,
-    hasCI: false,
-    hasApiContracts: false,
-    hasDependencies: false,
-    hasConfiguration: false
-  },
+  areas: [
+    { id: 'authentication', label: 'Authentication and security', files: ['src/auth/session.ts'] }
+  ],
   risk: {
     score: 35,
     level: 'medium',
@@ -46,16 +41,17 @@ const fullResult: AnalysisResult = {
     hasChangedTests: true,
     hasChangedDocs: false,
     hasPackageManifest: true,
+    manifests: ['package.json'],
     packageManager: 'pnpm',
     hasTestScript: true,
     hasTypecheckScript: true,
     hasCiWorkflow: true
   },
   lowReviewValueFiles: [
-    { path: 'pnpm-lock.yaml', status: 'modified', additions: 50, deletions: 10, isGenerated: false, isLowValue: true },
-    { path: 'docs/generated.md', status: 'modified', additions: 0, deletions: 0, isGenerated: true, isLowValue: true },
-    { path: 'space file.txt', status: 'added', additions: 5, deletions: 0, isGenerated: false, isLowValue: true },
-    { path: 'new\nline.txt', status: 'added', additions: 5, deletions: 0, isGenerated: false, isLowValue: true }
+    { path: 'pnpm-lock.yaml', status: 'modified', additions: 50, deletions: 10, isBinary: false, isGenerated: false, isLowValue: true },
+    { path: 'docs/generated.md', status: 'modified', additions: 0, deletions: 0, isBinary: false, isGenerated: true, isLowValue: true },
+    { path: 'space file.txt', status: 'added', additions: 5, deletions: 0, isBinary: false, isGenerated: false, isLowValue: true },
+    { path: 'new\nline.txt', status: 'added', additions: 5, deletions: 0, isBinary: false, isGenerated: false, isLowValue: true }
   ],
   reviewFocus: [
     'Production changes without tests',
@@ -82,14 +78,7 @@ const minimalResult: AnalysisResult = {
     reviewableLines: 15
   },
   files: [],
-  areas: {
-    hasMigrations: false,
-    hasAuthentication: false,
-    hasCI: false,
-    hasApiContracts: false,
-    hasDependencies: false,
-    hasConfiguration: false
-  },
+  areas: [],
   risk: {
     score: 0,
     level: 'low',
@@ -99,6 +88,7 @@ const minimalResult: AnalysisResult = {
     hasChangedTests: false,
     hasChangedDocs: false,
     hasPackageManifest: false,
+    manifests: [],
     packageManager: 'unknown',
     hasTestScript: false,
     hasTypecheckScript: false,
@@ -147,6 +137,26 @@ describe('Renderers', () => {
     const md = renderMarkdown(fullResult);
     expect(md).toContain('`new\\nline.txt`');
     expect(md).not.toContain('`new\nline.txt`');
+  });
+
+  it('file paths cannot inject terminal control characters into Markdown', () => {
+    const controlResult: AnalysisResult = {
+      ...minimalResult,
+      lowReviewValueFiles: [
+        {
+          path: '\u001b[31m-danger.png',
+          status: 'added',
+          additions: 0,
+          deletions: 0,
+          isBinary: true,
+          isGenerated: false,
+          isLowValue: true
+        }
+      ]
+    };
+    const md = renderMarkdown(controlResult);
+    expect(md).toContain('`\\x1b[31m-danger.png`');
+    expect(md).not.toContain('\u001b');
   });
 
   it('JSON top-level key order is stable', () => {

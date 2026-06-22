@@ -22,6 +22,7 @@ pnpm test
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm smoke
 ```
 
 ## Running the CLI Locally
@@ -48,7 +49,7 @@ Every PR should explain:
 ## Adding Analyzer Rules
 
 When adding a new path matcher or risk classification to `packages/core`:
-1. Update `packages/core/src/analyzer.ts`.
+1. Update the smallest relevant module in `packages/core/src`.
 2. Add a test case demonstrating the rule.
 3. Update `AGENTS.md` rules if necessary.
 

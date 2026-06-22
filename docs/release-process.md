@@ -12,15 +12,14 @@ pnpm test
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm smoke
 ```
 
 ## Smoke Test Local Packages
-You can pack the CLI offline to verify bundle integrity without publishing:
+Run the automated pack/install/execute check without publishing:
 
 ```bash
-PACK_DIR="$(mktemp -d)"
-pnpm --filter pr-nutrition pack --pack-destination "$PACK_DIR"
-ls -la "$PACK_DIR"
+pnpm smoke
 ```
 
 *Note: Automated npm publishing will be added in a future PR. Do not publish to npm directly.*

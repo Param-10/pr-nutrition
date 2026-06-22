@@ -1,28 +1,38 @@
+export type RiskAreaId =
+  | "migrations"
+  | "authentication"
+  | "ci"
+  | "api"
+  | "dependencies"
+  | "configuration";
+
 export interface AreaClassification {
-  hasMigrations: boolean;
-  hasAuthentication: boolean;
-  hasCI: boolean;
-  hasApiContracts: boolean;
-  hasDependencies: boolean;
-  hasConfiguration: boolean;
+  id: RiskAreaId;
+  label: string;
+  files: string[];
 }
 
-export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'unknown';
+export type FileStatus = "added" | "modified" | "deleted" | "renamed" | "copied" | "unknown";
 
 export interface ChangedFile {
   path: string;
+  previousPath?: string;
   status: FileStatus;
   additions: number;
   deletions: number;
+  isBinary: boolean;
   isGenerated: boolean;
   isLowValue: boolean;
 }
+
+export type PackageManager = "npm" | "yarn" | "pnpm" | "uv" | "poetry" | "cargo" | "go" | "unknown";
 
 export interface RepositoryEvidence {
   hasChangedTests: boolean;
   hasChangedDocs: boolean;
   hasPackageManifest: boolean;
-  packageManager: 'npm' | 'yarn' | 'pnpm' | 'unknown';
+  manifests: string[];
+  packageManager: PackageManager;
   hasTestScript: boolean;
   hasTypecheckScript: boolean;
   hasCiWorkflow: boolean;
@@ -49,10 +59,10 @@ export interface AnalysisResult {
     reviewableLines: number;
   };
   files: ChangedFile[];
-  areas: AreaClassification;
+  areas: AreaClassification[];
   risk: {
     score: number;
-    level: 'low' | 'medium' | 'high';
+    level: "low" | "medium" | "high";
     reasons: RiskReason[];
   };
   evidence: RepositoryEvidence;
@@ -66,4 +76,3 @@ export interface AnalyzeOptions {
   baseRef: string;
   headRef: string;
 }
-

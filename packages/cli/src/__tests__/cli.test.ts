@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runCli, CliIO } from '../run.js';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -87,10 +87,10 @@ describe('pr-nutrition CLI integration', () => {
   beforeEach(() => {
     tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-test-'));
     initGitRepo(tmpRepo);
-    execFileSync('sh', ['-c', 'echo "content" > file.txt'], { cwd: tmpRepo });
+    writeFileSync(path.join(tmpRepo, 'file.txt'), 'content\n');
     commitAll(tmpRepo, 'initial');
     // create a head commit
-    execFileSync('sh', ['-c', 'echo "change" > file.txt'], { cwd: tmpRepo });
+    writeFileSync(path.join(tmpRepo, 'file.txt'), 'change\n');
     commitAll(tmpRepo, 'change');
   });
 
