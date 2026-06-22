@@ -23,7 +23,8 @@
   },
   "scripts": {
     "build": "tsup",
-    "smoke": "node ./dist/index.js --version && node ./dist/index.js --help"
+    "smoke": "node ./dist/index.js --version && node ./dist/index.js --help",
+    "start": "node ./dist/index.js"
   },
   "engines": {
     "node": ">=22.13 <27"
