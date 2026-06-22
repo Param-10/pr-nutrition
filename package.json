@@ -1,0 +1,28 @@
+{
+  "name": "pr-nutrition-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Deterministic review-readiness labels for pull requests.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=22.13 <27",
+    "pnpm": "11.8.0"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present build",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --build --pretty false"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.2",
+    "eslint": "^10.5.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1",
+    "vitest": "^4.1.9"
+  }
+}
