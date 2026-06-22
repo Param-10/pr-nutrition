@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "comparison": {
+    "repoPath": "/tmp/repo",
+    "baseRef": "main",
+    "headRef": "HEAD",
+    "mergeBase": "abcdef"
+  },
+  "summary": {
+    "filesChanged": 2,
+    "additions": 10,
+    "deletions": 5,
+    "reviewableFiles": 2,
+    "reviewableLines": 15
+  },
+  "files": [],
+  "areas": {
+    "hasMigrations": false,
+    "hasAuthentication": false,
+    "hasCI": false,
+    "hasApiContracts": false,
+    "hasDependencies": false,
+    "hasConfiguration": false
+  },
+  "risk": {
+    "score": 0,
+    "level": "low",
+    "reasons": []
+  },
+  "evidence": {
+    "hasChangedTests": false,
+    "hasChangedDocs": false,
+    "hasPackageManifest": false,
+    "packageManager": "unknown",
+    "hasTestScript": false,
+    "hasTypecheckScript": false,
+    "hasCiWorkflow": false
+  },
+  "lowReviewValueFiles": [],
+  "reviewFocus": [],
+  "warnings": []
+}

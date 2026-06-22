@@ -1,5 +1,10 @@
-export * from './types.js';
-export * from './git.js';
-export * from './classifier.js';
-export * from './scorer.js';
-export * from './analyzer.js';
+export { analyzePullRequest } from "./analyzer.js";
+export { renderMarkdown, renderJson } from "./render.js";
+export type {
+  AnalysisResult,
+  AnalyzeOptions,
+  ChangedFile,
+  AreaClassification,
+  RepositoryEvidence,
+  RiskReason,
+} from "./types.js";

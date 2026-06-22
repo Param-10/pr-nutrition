@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "comparison": {
+    "repoPath": "/tmp/repo",
+    "baseRef": "main",
+    "headRef": "HEAD",
+    "mergeBase": "abcdef"
+  },
+  "summary": {
+    "filesChanged": 12,
+    "additions": 300,
+    "deletions": 50,
+    "reviewableFiles": 8,
+    "reviewableLines": 250
+  },
+  "files": [],
+  "areas": {
+    "hasMigrations": false,
+    "hasAuthentication": true,
+    "hasCI": false,
+    "hasApiContracts": false,
+    "hasDependencies": false,
+    "hasConfiguration": false
+  },
+  "risk": {
+    "score": 35,
+    "level": "medium",
+    "reasons": [
+      {
+        "description": "Authentication/security logic changed",
+        "points": 25
+      },
+      {
+        "description": "Size: 10+ reviewable files or 200+ reviewable lines",
+        "points": 10
+      }
+    ]
+  },
+  "evidence": {
+    "hasChangedTests": true,
+    "hasChangedDocs": false,
+    "hasPackageManifest": true,
+    "packageManager": "pnpm",
+    "hasTestScript": true,
+    "hasTypecheckScript": true,
+    "hasCiWorkflow": true
+  },
+  "lowReviewValueFiles": [
+    {
+      "path": "pnpm-lock.yaml",
+      "status": "modified",
+      "additions": 50,
+      "deletions": 10,
+      "isGenerated": false,
+      "isLowValue": true
+    },
+    {
+      "path": "docs/generated.md",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 0,
+      "isGenerated": true,
+      "isLowValue": true
+    },
+    {
+      "path": "space file.txt",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": true
+    },
+    {
+      "path": "new\nline.txt",
+      "status": "added",
+      "additions": 5,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": true
+    }
+  ],
+  "reviewFocus": [
+    "Production changes without tests",
+    "Ensure auth modifications are strictly scoped"
+  ],
+  "warnings": [
+    "package.json could not be parsed"
+  ]
+}
