@@ -135,7 +135,7 @@ describe('Core Analyzer', () => {
     // lowReviewValueFiles must be full objects
     expect(Array.isArray(result.lowReviewValueFiles)).toBe(true);
     if (result.lowReviewValueFiles.length > 0) {
-      const lrvf = result.lowReviewValueFiles[0];
+      const lrvf = result.lowReviewValueFiles[0]!;
       expect(lrvf.path).toBeDefined();
       expect(lrvf.status).toBeDefined();
       expect(typeof lrvf.additions).toBe('number');
