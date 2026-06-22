@@ -94,6 +94,10 @@ Every PR should include:
 
 Use Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, and `refactor:`.
 
+Strict naming and authoring rules:
+- Branch and PR names must be normal and descriptive. Do NOT use the names of AI coding agents (e.g., Codex, Claude, Antigravity, Cursor, etc.) in branch names or PR titles.
+- Do not use co-authoring (e.g., `Co-authored-by`) for AI coding agents.
+
 ## Product principle
 
 The value of this project is trust. Prefer boring, explainable, useful output over flashy AI behavior.
