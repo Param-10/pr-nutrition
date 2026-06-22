@@ -1,0 +1,36 @@
+name: False Positive
+description: Report an incorrect risk classification
+title: "[False Positive]: "
+labels: ["false-positive"]
+body:
+  - type: textarea
+    id: filepath
+    attributes:
+      label: File Path Pattern
+      description: What file or pattern triggered the false positive? (Use sanitized paths)
+      placeholder: "e.g., src/tests/mock-auth.ts"
+    validations:
+      required: true
+  - type: input
+    id: detected
+    attributes:
+      label: Detected Risk Area
+      description: What area did PR Nutrition classify this as?
+      placeholder: "e.g., Auth/Security"
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Expected Risk Area
+      description: What area SHOULD it have been?
+      placeholder: "e.g., None, or Tests"
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why it should be classified differently
+      description: Explain why the current rule is overly broad.
+    validations:
+      required: true

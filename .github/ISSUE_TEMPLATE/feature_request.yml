@@ -1,0 +1,36 @@
+name: Feature Request
+description: Propose a new rule, flag, or behavior
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Use Case
+      description: Describe the problem you're trying to solve.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Target Workflow
+      description: How would this fit into your process?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Output
+      description: What should the CLI or Markdown/JSON look like?
+    validations:
+      required: true
+  - type: checkboxes
+    id: affected
+    attributes:
+      label: Affected Component(s)
+      description: Which parts of the system would this affect?
+      options:
+        - label: Analyzer (Core rules)
+        - label: Renderers (Markdown/JSON)
+        - label: CLI (Flags/Exit codes)
+        - label: Future GitHub Action

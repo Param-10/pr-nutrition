@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "comparison": {
+    "repoPath": "/var/folders/dz/gf832gyn2hl_0qt1jjq7g7s00000gn/T/pr-nutrition-examples-WlCyFS",
+    "baseRef": "HEAD~1",
+    "headRef": "HEAD",
+    "mergeBase": "c4b1cee089110ff2fda9b521708881d154b7bc60"
+  },
+  "summary": {
+    "filesChanged": 4,
+    "additions": 7,
+    "deletions": 1,
+    "reviewableFiles": 3,
+    "reviewableLines": 6
+  },
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "openapi.yaml",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": false
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": true
+    },
+    {
+      "path": "src/auth/session.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "isGenerated": false,
+      "isLowValue": false
+    }
+  ],
+  "areas": {
+    "hasMigrations": false,
+    "hasAuthentication": true,
+    "hasCI": true,
+    "hasApiContracts": true,
+    "hasDependencies": true,
+    "hasConfiguration": false
+  },
+  "risk": {
+    "score": 75,
+    "level": "high",
+    "reasons": [
+      {
+        "description": "Touched authentication/security paths",
+        "points": 25
+      },
+      {
+        "description": "Touched CI/workflows",
+        "points": 20
+      },
+      {
+        "description": "Touched API/public contracts",
+        "points": 15
+      },
+      {
+        "description": "Touched dependency manifests/lockfiles",
+        "points": 15
+      }
+    ]
+  },
+  "evidence": {
+    "hasChangedTests": false,
+    "hasChangedDocs": false,
+    "hasPackageManifest": true,
+    "packageManager": "pnpm",
+    "hasTestScript": true,
+    "hasTypecheckScript": true,
+    "hasCiWorkflow": true
+  },
+  "lowReviewValueFiles": [
+    {
+      "path": "pnpm-lock.yaml",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "isGenerated": false,
+      "isLowValue": true
+    }
+  ],
+  "reviewFocus": [
+    "Production changes without tests"
+  ],
+  "warnings": [
+    "Production changes without tests"
+  ]
+}
