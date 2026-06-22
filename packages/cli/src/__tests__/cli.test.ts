@@ -1,9 +1,28 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runCli, CliIO } from '../run.js';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+
+function git(repoPath: string, args: string[]): string {
+  return execFileSync("git", args, {
+    cwd: repoPath,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+function initGitRepo(repoPath: string): void {
+  git(repoPath, ["init", "-b", "main"]);
+  git(repoPath, ["config", "user.name", "PR Nutrition Test"]);
+  git(repoPath, ["config", "user.email", "test@example.com"]);
+}
+
+function commitAll(repoPath: string, message: string): void {
+  git(repoPath, ["add", "."]);
+  git(repoPath, ["commit", "-m", message]);
+}
 
 function createMockIO(): { io: CliIO, getStdout: () => string, getStderr: () => string } {
   let stdoutData = '';
@@ -60,14 +79,6 @@ describe('pr-nutrition CLI runner', () => {
     expect(code).toBe(1);
     expect(getStderr()).toContain('too many arguments');
   });
-
-  it('returns 2 on output file write failure', async () => {
-    const { io, getStderr } = createMockIO();
-    // Try to write to a non-existent directory without creating it
-    const code = await runCli(['node', 'pr-nutrition', '--output', '/does/not/exist/file.md'], io);
-    expect(code).toBe(2);
-    expect(getStderr()).toContain('output file write failure');
-  });
 });
 
 describe('pr-nutrition CLI integration', () => {
@@ -75,20 +86,24 @@ describe('pr-nutrition CLI integration', () => {
 
   beforeEach(() => {
     tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-test-'));
-    execSync('git init', { cwd: tmpRepo });
-    execSync('git config user.name "Test"', { cwd: tmpRepo });
-    execSync('git config user.email "test@example.com"', { cwd: tmpRepo });
-    execSync('echo "content" > file.txt', { cwd: tmpRepo });
-    execSync('git add file.txt', { cwd: tmpRepo });
-    execSync('git commit -m "initial"', { cwd: tmpRepo });
+    initGitRepo(tmpRepo);
+    execFileSync('sh', ['-c', 'echo "content" > file.txt'], { cwd: tmpRepo });
+    commitAll(tmpRepo, 'initial');
     // create a head commit
-    execSync('echo "change" > file.txt', { cwd: tmpRepo });
-    execSync('git add file.txt', { cwd: tmpRepo });
-    execSync('git commit -m "change"', { cwd: tmpRepo });
+    execFileSync('sh', ['-c', 'echo "change" > file.txt'], { cwd: tmpRepo });
+    commitAll(tmpRepo, 'change');
   });
 
   afterEach(() => {
     rmSync(tmpRepo, { recursive: true, force: true });
+  });
+
+  it('returns 2 on output file write failure', async () => {
+    const { io, getStderr } = createMockIO();
+    // Try to write to a non-existent directory without creating it, using valid repo so analyzer passes
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--output', '/does/not/exist/file.md'], io);
+    expect(code).toBe(2);
+    expect(getStderr()).toContain('output file write failure');
   });
 
   it('outputs markdown to stdout by default', async () => {
