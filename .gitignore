@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local AI/tool scratch
+.ai-scratch/
+.agent-logs/
+.cursor-chat/
+codex-logs/
+antigravity-logs/
