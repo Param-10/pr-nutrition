@@ -29,6 +29,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install compatible Corepack
+        run: npm install --global corepack@0.34.0
+
       - name: Enable pnpm
         run: |
           corepack enable
