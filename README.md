@@ -8,6 +8,16 @@ Not an AI code reviewer. Not a PR summary bot. A deterministic label that tells 
 
 v0.1 is available from this repository for local testing. It has not been published to npm yet.
 
+## Installation
+
+After v0.1.0 is published:
+
+```bash
+npx pr-nutrition@0.1.0 --base main --head HEAD
+```
+
+Until then, use the local development workflow below.
+
 ## Example Output
 
 See [examples/demo-pr/pr-nutrition.md](examples/demo-pr/pr-nutrition.md) for a complete example of the generated Markdown label.
@@ -75,9 +85,11 @@ PR Nutrition does not judge correctness, detect bugs, suggest code changes, add 
 
 ## Resources
 
+- [Changelog](CHANGELOG.md)
 - [Roadmap](ROADMAP.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Architecture Notes](docs/architecture.md)
 - [Privacy Model](docs/privacy.md)
+

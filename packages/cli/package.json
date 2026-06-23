@@ -2,8 +2,26 @@
   "name": "pr-nutrition",
   "version": "0.1.0",
   "description": "A deterministic pull request review-readiness label generator.",
+  "keywords": [
+    "pull-request",
+    "code-review",
+    "cli",
+    "git",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/Param-10/pr-nutrition#readme",
+  "bugs": {
+    "url": "https://github.com/Param-10/pr-nutrition/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Param-10/pr-nutrition.git"
+  },
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "pr-nutrition": "dist/index.cjs"
   },

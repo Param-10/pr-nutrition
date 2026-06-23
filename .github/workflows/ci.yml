@@ -57,3 +57,6 @@ jobs:
 
       - name: Test packed CLI offline
         run: pnpm smoke
+
+      - name: Verify release package
+        run: pnpm release:check
