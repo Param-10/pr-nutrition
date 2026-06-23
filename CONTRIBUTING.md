@@ -23,6 +23,7 @@ pnpm typecheck
 pnpm lint
 pnpm build
 pnpm smoke
+pnpm release:check
 ```
 
 ## Running the CLI Locally

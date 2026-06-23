@@ -71,6 +71,8 @@ pnpm test
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm smoke
+pnpm release:check
 ```
 
 ## Security and privacy rules

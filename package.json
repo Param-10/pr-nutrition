@@ -13,6 +13,7 @@
   "scripts": {
     "build": "pnpm --recursive --if-present build",
     "lint": "eslint .",
+    "release:check": "node scripts/release-check.mjs",
     "smoke": "pnpm --filter pr-nutrition smoke",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --build --pretty false"
