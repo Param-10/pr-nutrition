@@ -11,10 +11,11 @@
     "pnpm": "11.8.0"
   },
   "scripts": {
+    "action:bundle-check": "node scripts/check-action-bundle.mjs",
     "build": "pnpm --recursive --if-present build",
     "lint": "eslint .",
     "release:check": "node scripts/release-check.mjs",
-    "smoke": "pnpm --filter pr-nutrition smoke",
+    "smoke": "pnpm --filter pr-nutrition smoke && pnpm --filter @pr-nutrition/action smoke",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --build --pretty false"
   },

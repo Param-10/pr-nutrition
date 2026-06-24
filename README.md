@@ -164,6 +164,30 @@ PR Nutrition uses pull-request-style three-dot comparison: it finds the merge ba
 
 ---
 
+## GitHub Action
+
+The read-only JavaScript Action uses pull-request event SHAs by default and requires a full-history checkout:
+
+```yaml
+permissions:
+  contents: read
+
+steps:
+  - uses: actions/checkout@<immutable-sha>
+    with:
+      fetch-depth: 0
+      persist-credentials: false
+
+  - id: nutrition
+    uses: Param-10/pr-nutrition@<immutable-sha>
+```
+
+For non-pull-request events, provide both `base-ref` and `head-ref`. Providing only one is an error. The Action writes `pr-nutrition.md` and `pr-nutrition.json` under `$RUNNER_TEMP/pr-nutrition`, appends Markdown to the job summary by default, and exposes `risk-score`, `risk-level`, `files-changed`, `markdown-path`, and `json-path` outputs.
+
+The Action does not fetch Git history, call GitHub APIs, create comments, or mutate pull requests. Missing history fails with guidance to use `fetch-depth: 0`.
+
+---
+
 ## Privacy model
 
 PR Nutrition is local-first and deterministic.
@@ -233,10 +257,10 @@ Current:
 * published npm package
 * release checks
 * secure staged-release automation
+* read-only GitHub Action
 
 Next:
 
-* read-only GitHub Action
 * strict JSON configuration
 * richer deterministic framework and infrastructure rules
 

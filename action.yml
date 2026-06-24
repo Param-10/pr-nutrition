@@ -1,0 +1,43 @@
+name: PR Nutrition
+description: Generate a deterministic, read-only pull request review-readiness report.
+author: PR Nutrition contributors
+
+inputs:
+  repo-path:
+    description: Repository path checked out with full Git history.
+    required: false
+    default: .
+  base-ref:
+    description: Base Git revision. Must be provided together with head-ref.
+    required: false
+  head-ref:
+    description: Head Git revision. Must be provided together with base-ref.
+    required: false
+  write-step-summary:
+    description: Append the Markdown report to GITHUB_STEP_SUMMARY.
+    required: false
+    default: "true"
+  output-directory:
+    description: Directory for pr-nutrition.md and pr-nutrition.json.
+    required: false
+    default: $RUNNER_TEMP/pr-nutrition
+
+outputs:
+  risk-score:
+    description: Deterministic risk score from 0 to 100.
+  risk-level:
+    description: Deterministic risk level (low, medium, or high).
+  files-changed:
+    description: Number of files changed in the pull request comparison.
+  markdown-path:
+    description: Absolute path to the Markdown report.
+  json-path:
+    description: Absolute path to the JSON report.
+
+runs:
+  using: node24
+  main: packages/action/dist/index.cjs
+
+branding:
+  icon: activity
+  color: green

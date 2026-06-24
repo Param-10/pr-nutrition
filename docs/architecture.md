@@ -16,7 +16,7 @@ Git metadata
 
 - `packages/core`: Owns the analysis engine and renderers. Contains no GitHub Action or CLI parsing logic.
 - `packages/cli`: Only handles arguments, output writing, and exit codes. Uses `packages/core`.
-- `packages/action`: (Future) A GitHub Action wrapper around the CLI/core, without changing the core model.
+- `packages/action`: A read-only GitHub Action wrapper around the core, without changing the core model or calling GitHub APIs.
 
 ## Stable Core Boundary
 

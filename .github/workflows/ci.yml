@@ -52,6 +52,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Verify committed Action bundle
+        run: pnpm action:bundle-check
+
       - name: Build
         run: pnpm build
 
