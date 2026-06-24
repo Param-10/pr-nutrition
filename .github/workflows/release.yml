@@ -71,5 +71,5 @@ jobs:
 
       - name: Stage npm publish
         working-directory: packages/cli
-        # Stages for inspection only; public release requires separate maintainer 2FA approval.
+        # OIDC stages for inspection only; publishing still requires separate maintainer 2FA approval.
         run: npm stage publish --access public
