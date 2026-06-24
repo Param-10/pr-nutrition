@@ -1,0 +1,27 @@
+{
+  "name": "@pr-nutrition/action",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Read-only GitHub Action wrapper for PR Nutrition.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "scripts": {
+    "build": "tsup",
+    "smoke": "node ../../scripts/smoke-action.mjs",
+    "typecheck": "tsc --build --pretty false"
+  },
+  "dependencies": {
+    "@actions/core": "3.0.1"
+  },
+  "devDependencies": {
+    "@pr-nutrition/core": "workspace:*",
+    "@types/node": "24.13.2",
+    "tsup": "8.5.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  },
+  "engines": {
+    "node": ">=24 <27"
+  }
+}

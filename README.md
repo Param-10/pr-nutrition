@@ -51,6 +51,28 @@ pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
 
 The analyzer finds the merge base and compares that commit with the head, matching pull-request three-dot semantics. Exit codes are `0` for success, `1` for invalid CLI usage, and `2` for repository, ref, Git, or output failures.
 
+## GitHub Action
+
+The read-only JavaScript Action uses pull-request event SHAs by default and requires a full-history checkout:
+
+```yaml
+permissions:
+  contents: read
+
+steps:
+  - uses: actions/checkout@<immutable-sha>
+    with:
+      fetch-depth: 0
+      persist-credentials: false
+
+  - id: nutrition
+    uses: Param-10/pr-nutrition@<immutable-sha>
+```
+
+For non-pull-request events, provide both `base-ref` and `head-ref`. Providing only one is an error. The Action writes `pr-nutrition.md` and `pr-nutrition.json` under `$RUNNER_TEMP/pr-nutrition`, appends Markdown to the job summary by default, and exposes `risk-score`, `risk-level`, `files-changed`, `markdown-path`, and `json-path` outputs.
+
+The Action does not fetch Git history, call GitHub APIs, create comments, or mutate pull requests. Missing history fails with guidance to use `fetch-depth: 0`.
+
 ## What it Detects
 
 PR Nutrition runs deterministically to classify and score risk based on:
@@ -81,7 +103,7 @@ PR Nutrition v0.1 is local-first and built for trust:
 
 ## v0.1 Non-goals
 
-PR Nutrition does not judge correctness, detect bugs, suggest code changes, add inline comments, call GitHub APIs, or execute repository scripts. Configuration files, a GitHub Action, AST analysis, LLM wording polish, and split hints remain future work.
+PR Nutrition does not judge correctness, detect bugs, suggest code changes, add inline comments, call GitHub APIs, or execute repository scripts. Configuration files, AST analysis, LLM wording polish, and split hints remain future work.
 
 ## Resources
 
@@ -92,4 +114,3 @@ PR Nutrition does not judge correctness, detect bugs, suggest code changes, add 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Architecture Notes](docs/architecture.md)
 - [Privacy Model](docs/privacy.md)
-
