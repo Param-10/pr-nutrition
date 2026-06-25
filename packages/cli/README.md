@@ -2,14 +2,17 @@
 
 A deterministic pull request review-readiness label generator.
 
-> v0.1 is not published to npm yet. This README documents the binary produced by the repository build.
-
 ## Installation
-
-After v0.1.0 is published:
 
 ```bash
 npx pr-nutrition@0.1.0 --base main --head HEAD
+```
+
+Or install it globally:
+
+```bash
+npm install -g pr-nutrition
+pr-nutrition --base main --head HEAD
 ```
 
 ## Usage

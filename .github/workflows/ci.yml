@@ -10,6 +10,65 @@ permissions:
   contents: read
 
 jobs:
+  action-dogfood:
+    name: Read-only Action dogfood
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run local PR Nutrition Action
+        id: nutrition
+        uses: ./
+
+      - name: Verify Action outputs and files
+        env:
+          RISK_SCORE: ${{ steps.nutrition.outputs.risk-score }}
+          RISK_LEVEL: ${{ steps.nutrition.outputs.risk-level }}
+          FILES_CHANGED: ${{ steps.nutrition.outputs.files-changed }}
+          MARKDOWN_PATH: ${{ steps.nutrition.outputs.markdown-path }}
+          JSON_PATH: ${{ steps.nutrition.outputs.json-path }}
+        run: |
+          case "$RISK_SCORE" in
+            ''|*[!0-9]*)
+              echo "risk-score must be numeric"
+              exit 1
+              ;;
+          esac
+
+          if [ "$RISK_SCORE" -gt 100 ]; then
+            echo "risk-score must be within 0-100"
+            exit 1
+          fi
+
+          case "$RISK_LEVEL" in
+            low|medium|high) ;;
+            *)
+              echo "risk-level must be low, medium, or high"
+              exit 1
+              ;;
+          esac
+
+          case "$FILES_CHANGED" in
+            ''|*[!0-9]*)
+              echo "files-changed must be numeric"
+              exit 1
+              ;;
+          esac
+
+          test -s "$MARKDOWN_PATH"
+          test -s "$JSON_PATH"
+          grep -F "# PR Nutrition" "$MARKDOWN_PATH"
+          grep -F '"schemaVersion": 1' "$JSON_PATH"
+
   validate:
     name: Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
@@ -58,7 +117,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test packed CLI offline
+      - name: Run CLI and Action smoke tests
         run: pnpm smoke
 
       - name: Verify release package

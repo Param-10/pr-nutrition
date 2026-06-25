@@ -16,6 +16,8 @@ This is not an AI code reviewer. The core product should be explainable, local-f
 
 ## Current product direction
 
+PR Nutrition should remain a local-first PR triage CLI first, with the GitHub Action as an optional read-only wrapper for CI summaries and outputs. The strongest use case is: before reviewing, submitting, or pushing a PR, tell the author or reviewer what matters.
+
 Build in this order:
 
 1. Core diff analyzer
@@ -25,10 +27,12 @@ Build in this order:
 5. Test fixtures
 6. GitHub Action wrapper
 7. Config file support
-8. Optional LLM polish
-9. PR split hints
+8. False-positive evaluation suite
+9. CLI explain/focus/doctor workflows
+10. Optional LLM polish
+11. PR split hints
 
-For v0.1, prefer the smallest correct implementation. Do not add a config parser, GitHub API client, LLM client, AST parser, database, web UI, inline review comments, or `packages/action`.
+After the read-only Action, prefer CLI trust and accuracy improvements before integrations that create notifications. Do not add a config parser, GitHub API client, LLM client, AST parser, database, web UI, inline review comments, or write permissions unless the user explicitly scopes that milestone.
 
 ## Tech stack
 
@@ -45,11 +49,11 @@ Prefer small packages and minimal dependencies.
 
 - `packages/core`: diff parsing, classification, risk scoring, and output model
 - `packages/cli`: command-line interface
-- `packages/action`: future GitHub Action wrapper
+- `packages/action`: read-only GitHub Action wrapper around the core
 - `examples`: demo repositories and sample outputs
 - `docs`: design notes and contributor documentation
 
-The core package must not depend on GitHub APIs. GitHub-specific logic belongs in the future action package.
+The core package must not depend on GitHub APIs. GitHub Action-specific input, event, step summary, and output-file logic belongs in `packages/action`.
 
 ## Coding rules
 
@@ -70,6 +74,7 @@ pnpm install --frozen-lockfile
 pnpm test
 pnpm typecheck
 pnpm lint
+pnpm action:bundle-check
 pnpm build
 pnpm smoke
 pnpm release:check
@@ -103,3 +108,5 @@ Strict naming and authoring rules:
 ## Product principle
 
 The value of this project is trust. Prefer boring, explainable, useful output over flashy AI behavior.
+
+PR Nutrition should never create work for reviewers. It should remove review noise before the review starts.
