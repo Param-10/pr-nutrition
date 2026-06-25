@@ -166,23 +166,45 @@ PR Nutrition uses pull-request-style three-dot comparison: it finds the merge ba
 
 ## GitHub Action
 
-The read-only JavaScript Action uses pull-request event SHAs by default and requires a full-history checkout:
+The read-only JavaScript Action is available from `main` by immutable commit SHA. It does not have a stable version tag yet; use the merge commit below until a versioned Action release exists.
+
+The Action uses pull-request event SHAs by default and requires a full-history checkout:
 
 ```yaml
 permissions:
   contents: read
 
 steps:
-  - uses: actions/checkout@<immutable-sha>
+  - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
     with:
       fetch-depth: 0
       persist-credentials: false
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@<immutable-sha>
+    uses: Param-10/pr-nutrition@910a1a760bb12e7541d476d87b6c77421fad0246
 ```
 
-For non-pull-request events, provide both `base-ref` and `head-ref`. Providing only one is an error. The Action writes `pr-nutrition.md` and `pr-nutrition.json` under `$RUNNER_TEMP/pr-nutrition`, appends Markdown to the job summary by default, and exposes `risk-score`, `risk-level`, `files-changed`, `markdown-path`, and `json-path` outputs.
+Inputs:
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `repo-path` | `.` | Repository checkout to analyze. |
+| `base-ref` | Pull-request base SHA | Optional base ref. Must be provided with `head-ref`; explicit refs override event metadata. |
+| `head-ref` | Pull-request head SHA | Optional head ref. Must be provided with `base-ref`; explicit refs override event metadata. |
+| `write-step-summary` | `true` | Append the Markdown report to `$GITHUB_STEP_SUMMARY`. |
+| `output-directory` | `$RUNNER_TEMP/pr-nutrition` | Directory for report files. |
+
+Outputs:
+
+| Output | Description |
+| --- | --- |
+| `risk-score` | Numeric score from `0` to `100`. |
+| `risk-level` | `low`, `medium`, or `high`. |
+| `files-changed` | Total changed files in the analyzed range. |
+| `markdown-path` | Path to `pr-nutrition.md`. |
+| `json-path` | Path to `pr-nutrition.json`. |
+
+For non-pull-request events, provide both `base-ref` and `head-ref`. Providing only one is an error. The Action writes `pr-nutrition.md` and `pr-nutrition.json` under `$RUNNER_TEMP/pr-nutrition`, appends Markdown to the job summary by default, and exposes the outputs listed above.
 
 The Action does not fetch Git history, call GitHub APIs, create comments, or mutate pull requests. Missing history fails with guidance to use `fetch-depth: 0`.
 
@@ -217,12 +239,15 @@ PR Nutrition is not:
 * a bug detector
 * a security scanner
 * a PR summary bot
+* a noisy PR-comment bot
 * a replacement for human review
 * a tool that decides whether code is correct
 
 It is a review-readiness label.
 
 It helps you know what kind of PR you are about to review before you spend time reading the diff.
+
+PR Nutrition should never create work for reviewers. It should remove review noise before the review starts.
 
 ---
 
@@ -241,6 +266,7 @@ Run checks:
 pnpm test
 pnpm typecheck
 pnpm lint
+pnpm action:bundle-check
 pnpm build
 pnpm smoke
 pnpm release:check
@@ -258,15 +284,19 @@ Current:
 * release checks
 * secure staged-release automation
 * read-only GitHub Action
+* committed reproducible Action bundle
 
 Next:
 
 * strict JSON configuration
+* false-positive evaluation cases
+* rule explanations and focused file guidance
 * richer deterministic framework and infrastructure rules
 
 Later:
 
-* optional PR comments
+* optional local workflow helpers
+* optional PR comments only after repeated user demand
 * more CI evidence
 * optional LLM wording polish, never risk decisions
 

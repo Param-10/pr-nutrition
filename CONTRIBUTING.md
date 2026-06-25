@@ -21,6 +21,7 @@ pnpm install --frozen-lockfile
 pnpm test
 pnpm typecheck
 pnpm lint
+pnpm action:bundle-check
 pnpm build
 pnpm smoke
 pnpm release:check
@@ -60,6 +61,16 @@ When changing Markdown or JSON output in `packages/core`:
 1. Update `packages/core/src/render.ts`.
 2. Run `pnpm test` and update any affected golden test fixtures.
 3. Run `node scripts/generate-examples.mjs` to regenerate output files in `examples/`.
+
+## Working on the GitHub Action
+
+The Action in `packages/action` is a thin read-only wrapper around `packages/core`.
+
+When changing Action source:
+1. Keep GitHub-specific logic limited to input parsing, event fallback, summary writing, output files, and Action outputs.
+2. Do not add PR comments, GitHub API calls, write permissions, history fetching, config inputs, or LLM behavior unless a separate milestone explicitly scopes it.
+3. Rebuild the committed bundle and run `pnpm action:bundle-check`.
+4. Confirm CI still dogfoods the committed Action through `uses: ./` without installing dependencies first.
 
 ## Updating Examples
 
