@@ -111,6 +111,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Evaluate rule corpus
+        run: pnpm eval
+
       - name: Verify committed Action bundle
         run: pnpm action:bundle-check
 

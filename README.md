@@ -264,6 +264,7 @@ Run checks:
 
 ```bash
 pnpm test
+pnpm eval
 pnpm typecheck
 pnpm lint
 pnpm action:bundle-check
@@ -285,11 +286,11 @@ Current:
 * secure staged-release automation
 * read-only GitHub Action
 * committed reproducible Action bundle
+* false-positive evaluation corpus
 
 Next:
 
 * strict JSON configuration
-* false-positive evaluation cases
 * rule explanations and focused file guidance
 * richer deterministic framework and infrastructure rules
 

@@ -1,0 +1,24 @@
+{
+  "name": "binary-only",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "expectedLowReviewValue": ["assets/logo.png"],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 1,
+    "reviewableFiles": 0,
+    "reviewableLines": 0
+  },
+  "expectedFiles": [
+    {
+      "path": "assets/logo.png",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 0,
+      "isBinary": true,
+      "isLowValue": true
+    }
+  ]
+}

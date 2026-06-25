@@ -72,6 +72,7 @@ Before finishing code changes, run:
 ```bash
 pnpm install --frozen-lockfile
 pnpm test
+pnpm eval
 pnpm typecheck
 pnpm lint
 pnpm action:bundle-check

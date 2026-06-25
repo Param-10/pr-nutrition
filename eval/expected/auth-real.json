@@ -1,0 +1,15 @@
+{
+  "name": "auth-real",
+  "expectedRiskLevel": "medium",
+  "minScore": 25,
+  "maxScore": 25,
+  "expectedAreas": ["authentication"],
+  "mustNotIncludeAreas": ["configuration"],
+  "expectedLowReviewValue": [],
+  "mustIncludeFocus": ["authentication"],
+  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedTests": true
+  }
+}

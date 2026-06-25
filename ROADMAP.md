@@ -14,8 +14,8 @@ PR Nutrition's center of gravity is a local-first PR triage CLI. CI and GitHub A
 - [x] Markdown step summary, Markdown/JSON report files, and Action outputs
 - [x] reproducible committed Node 24 Action bundle
 - [x] PR-only real-runner Action dogfood
+- [x] false-positive evaluation cases
 - [ ] strict JSON config file support
-- [ ] false-positive evaluation cases
 - [ ] richer package/script detection
 - [ ] more language/framework path rules
 

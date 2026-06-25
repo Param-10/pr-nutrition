@@ -1,0 +1,19 @@
+{
+  "name": "monorepo-package",
+  "expectedRiskLevel": "medium",
+  "minScore": 15,
+  "maxScore": 30,
+  "expectedAreas": ["api", "dependencies"],
+  "mustNotIncludeAreas": ["configuration"],
+  "expectedLowReviewValue": [],
+  "mustIncludeFocus": ["dependency"],
+  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasPackageManifest": false,
+    "packageManager": "unknown"
+  },
+  "expectedSummary": {
+    "filesChanged": 2
+  }
+}

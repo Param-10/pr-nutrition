@@ -1,0 +1,24 @@
+{
+  "name": "rename-only",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "expectedLowReviewValue": [],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 1,
+    "reviewableFiles": 1,
+    "reviewableLines": 0
+  },
+  "expectedFiles": [
+    {
+      "path": "src/new-name.ts",
+      "previousPath": "src/old-name.ts",
+      "status": "renamed",
+      "additions": 0,
+      "deletions": 0,
+      "isBinary": false
+    }
+  ]
+}

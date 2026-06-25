@@ -19,6 +19,7 @@ Before opening or updating a PR, you must verify your changes locally:
 ```bash
 pnpm install --frozen-lockfile
 pnpm test
+pnpm eval
 pnpm typecheck
 pnpm lint
 pnpm action:bundle-check
@@ -53,7 +54,8 @@ Every PR should explain:
 When adding a new path matcher or risk classification to `packages/core`:
 1. Update the smallest relevant module in `packages/core/src`.
 2. Add a test case demonstrating the rule.
-3. Update `AGENTS.md` rules if necessary.
+3. Add or update eval coverage in `eval/` for both the intended match and likely false positives.
+4. Update `AGENTS.md` rules if necessary.
 
 ## Modifying Renderer Output
 

@@ -11,6 +11,7 @@ Before tagging a release, maintainers must verify the full local gate:
 ```bash
 pnpm install --frozen-lockfile
 pnpm test
+pnpm eval
 pnpm typecheck
 pnpm lint
 pnpm action:bundle-check
@@ -19,7 +20,7 @@ pnpm smoke
 pnpm release:check
 ```
 
-`pnpm action:bundle-check` verifies that the committed GitHub Action bundle matches the current Action source. `pnpm smoke` verifies both the packed CLI and the committed Action bundle.
+`pnpm eval` checks deterministic false-positive and rule-regression cases. `pnpm action:bundle-check` verifies that the committed GitHub Action bundle matches the current Action source. `pnpm smoke` verifies both the packed CLI and the committed Action bundle.
 
 ## Staged npm Publishing
 

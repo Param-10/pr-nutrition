@@ -1,0 +1,15 @@
+{
+  "name": "auth-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["authentication"],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["authentication", "authorization", "session"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedDocs": true,
+    "hasChangedTests": true
+  }
+}

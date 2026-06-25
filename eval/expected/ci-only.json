@@ -1,0 +1,15 @@
+{
+  "name": "ci-only",
+  "expectedRiskLevel": "medium",
+  "minScore": 20,
+  "maxScore": 20,
+  "expectedAreas": ["ci"],
+  "mustNotIncludeAreas": ["configuration"],
+  "expectedLowReviewValue": [],
+  "mustIncludeFocus": ["workflow"],
+  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasCiWorkflow": true
+  }
+}

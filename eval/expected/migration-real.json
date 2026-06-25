@@ -1,0 +1,10 @@
+{
+  "name": "migration-real",
+  "expectedRiskLevel": "medium",
+  "minScore": 30,
+  "maxScore": 30,
+  "expectedAreas": ["migrations"],
+  "expectedLowReviewValue": [],
+  "mustIncludeFocus": ["migration"],
+  "expectedWarnings": []
+}

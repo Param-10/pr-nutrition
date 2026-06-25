@@ -13,6 +13,7 @@
   "scripts": {
     "action:bundle-check": "node scripts/check-action-bundle.mjs",
     "build": "pnpm --recursive --if-present build",
+    "eval": "node eval/run-eval.mjs",
     "lint": "eslint .",
     "release:check": "node scripts/release-check.mjs",
     "smoke": "pnpm --filter pr-nutrition smoke && pnpm --filter @pr-nutrition/action smoke",
