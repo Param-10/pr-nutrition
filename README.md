@@ -14,7 +14,7 @@ It does not review your code for you. It does not guess whether the code is corr
 * Where should a reviewer focus first?
 
 ```bash
-npx pr-nutrition@0.1.0 --base main --head HEAD
+npx pr-nutrition@latest
 ```
 
 That is it. You get a Markdown or JSON report you can read locally, save in CI, or attach to a pull request workflow.
@@ -115,14 +115,28 @@ Tests and docs affect the review guidance, but they do not reduce the risk score
 Use it directly with `npx`:
 
 ```bash
-npx pr-nutrition@0.1.0 --base main --head HEAD
+npx pr-nutrition@latest
+npx pr-nutrition@latest --output pr-nutrition.md
+```
+
+After the next package release, the JSON shortcut will also be available:
+
+```bash
+npx pr-nutrition@latest --json
 ```
 
 Or install globally:
 
 ```bash
 npm install -g pr-nutrition
-pr-nutrition --base main --head HEAD
+pr-nutrition
+```
+
+Current pinned `0.1.0` usage:
+
+```bash
+npx pr-nutrition@0.1.0
+npx pr-nutrition@0.1.0 --format json
 ```
 
 ---
@@ -130,16 +144,18 @@ pr-nutrition --base main --head HEAD
 ## CLI usage
 
 ```bash
-pr-nutrition --repo . --base main --head HEAD
+pr-nutrition
+pr-nutrition --json
 pr-nutrition --format json
-pr-nutrition --output pr-label.md
+pr-nutrition --output pr-nutrition.md
+pr-nutrition --base origin/main --head HEAD
 ```
 
 Full contract:
 
 ```text
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
-             [--format <markdown|json>] [--output <file>]
+             [--format <markdown|json>] [--json] [--output <file>]
 ```
 
 Options:
@@ -150,7 +166,10 @@ Options:
 | `--base <ref>`              |     `main` | Base ref               |
 | `--head <ref>`              |     `HEAD` | Head ref               |
 | `--format <markdown\|json>` | `markdown` | Output format          |
+| `--json`                    |    `false` | Alias for `--format json` |
 | `--output <file>`           |     stdout | Write output to a file |
+
+The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
 
 Exit codes:
 
@@ -161,6 +180,18 @@ Exit codes:
 |  `2` | Repository, ref, Git, or output failure |
 
 PR Nutrition uses pull-request-style three-dot comparison: it finds the merge base between `base` and `head`, then analyzes changes from that merge base to `head`.
+
+For agents and scripts:
+
+* Markdown is the default human-readable output.
+* JSON output is available with `--json` or `--format json`.
+* JSON is written only to stdout unless `--output` is provided.
+* Errors are written to stderr.
+* Exit codes are stable:
+  * `0` success
+  * `1` invalid CLI usage
+  * `2` repository, ref, Git, or output failure
+* JSON includes `schemaVersion: 1`.
 
 ---
 

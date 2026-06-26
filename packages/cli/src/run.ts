@@ -24,13 +24,22 @@ export async function runCli(
     .option("--base <ref>", "base ref", "main")
     .option("--head <ref>", "head ref", "HEAD")
     .option("--format <format>", "output format: markdown or json", "markdown")
+    .option("--json", "write JSON output (alias for --format json)")
     .option("--output <file>", "write output to a file instead of stdout")
     .allowExcessArguments(false)
     .exitOverride()
     .configureOutput({
       writeOut: (str) => io.stdout(str),
       writeErr: (str) => io.stderr(str),
-    });
+    })
+    .addHelpText("after", `
+
+Examples:
+  $ pr-nutrition
+  $ pr-nutrition --json
+  $ pr-nutrition --output pr-nutrition.md
+  $ pr-nutrition --base origin/main --head HEAD
+`);
 
   try {
     await program.parseAsync(argv);
@@ -51,6 +60,14 @@ export async function runCli(
     return 1;
   }
 
+  const formatWasProvided = program.getOptionValueSource("format") !== "default";
+  if (options.json && formatWasProvided && options.format !== "json") {
+    io.stderr("pr-nutrition: error: --json cannot be combined with --format markdown.\nRun `pr-nutrition --help` for usage.\n");
+    return 1;
+  }
+
+  const format = options.json ? "json" : options.format;
+
   try {
     const analysis = await analyzePullRequest({
       repoPath: options.repo,
@@ -59,7 +76,7 @@ export async function runCli(
     });
 
     const output =
-      options.format === "json"
+      format === "json"
         ? renderJson(analysis)
         : renderMarkdown(analysis);
 

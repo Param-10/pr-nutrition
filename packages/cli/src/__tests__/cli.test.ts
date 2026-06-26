@@ -43,6 +43,9 @@ describe('pr-nutrition CLI runner', () => {
     const code = await runCli(['node', 'pr-nutrition', '--help'], io);
     expect(code).toBe(0);
     expect(getStdout()).toContain('Usage: pr-nutrition');
+    expect(getStdout()).toContain('--json');
+    expect(getStdout()).toContain('Examples:');
+    expect(getStdout()).toContain('pr-nutrition --output pr-nutrition.md');
   });
 
   it('returns 0 and prints version on --version', async () => {
@@ -57,6 +60,13 @@ describe('pr-nutrition CLI runner', () => {
     const code = await runCli(['node', 'pr-nutrition', '--format', 'xml'], io);
     expect(code).toBe(1);
     expect(getStderr()).toContain('invalid');
+  });
+
+  it('returns 1 when --json conflicts with explicit markdown format', async () => {
+    const { io, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--json', '--format', 'markdown'], io);
+    expect(code).toBe(1);
+    expect(getStderr()).toContain('--json cannot be combined with --format markdown');
   });
 
   it('returns 1 on unknown option', async () => {
@@ -121,6 +131,22 @@ describe('pr-nutrition CLI integration', () => {
     expect(json.schemaVersion).toBe(1);
   });
 
+  it('outputs json to stdout when --json', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(json.schemaVersion).toBe(1);
+  });
+
+  it('outputs json when --json and --format json are combined', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json', '--format', 'json'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(json.schemaVersion).toBe(1);
+  });
+
   it('writes output to file and stdout is empty', async () => {
     const { io, getStdout } = createMockIO();
     const outPath = path.join(tmpRepo, 'out.md');
@@ -129,6 +155,16 @@ describe('pr-nutrition CLI integration', () => {
     expect(getStdout()).toBe('');
     const content = readFileSync(outPath, 'utf8');
     expect(content).toContain('# PR Nutrition');
+  });
+
+  it('writes json output to file and stdout is empty', async () => {
+    const { io, getStdout } = createMockIO();
+    const outPath = path.join(tmpRepo, 'out.json');
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json', '--output', outPath], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toBe('');
+    const json = JSON.parse(readFileSync(outPath, 'utf8'));
+    expect(json.schemaVersion).toBe(1);
   });
 
   it('returns 2 if repo path is invalid', async () => {
