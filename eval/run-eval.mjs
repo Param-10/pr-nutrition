@@ -25,6 +25,9 @@ const CASE_NAMES = [
   "rename-only",
   "binary-only",
   "monorepo-package",
+  "custom-generated",
+  "custom-auth-path",
+  "custom-docs-path",
 ];
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..");
@@ -212,17 +215,19 @@ try {
   });
 
   const coreUrl = pathToFileURL(path.join(workspaceRoot, "packages", "core", "dist", "index.js"));
-  const { analyzePullRequest } = await import(coreUrl.href);
+  const { analyzePullRequest, loadAnalysisConfig } = await import(coreUrl.href);
   const cases = await Promise.all(CASE_NAMES.map(loadCase));
   const results = [];
 
   for (const evalCase of cases) {
     const repo = createRepository(evalCase.name);
     await evalCase.build(repo);
+    const config = loadAnalysisConfig({ repoPath: repo.path });
     const analysis = await analyzePullRequest({
       repoPath: repo.path,
       baseRef: "HEAD~1",
       headRef: "HEAD",
+      ...(config === undefined ? {} : { config }),
     });
     const failures = assertExpected(evalCase.name, analysis, evalCase.expected);
     results.push({

@@ -1,0 +1,22 @@
+{
+  "name": "custom-generated",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "expectedLowReviewValue": ["sdk/client.ts"],
+  "mustNotIncludeFocus": ["production changes detected without changed tests"],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 1,
+    "reviewableFiles": 0,
+    "reviewableLines": 0
+  },
+  "expectedFiles": [
+    {
+      "path": "sdk/client.ts",
+      "isGenerated": true,
+      "isLowValue": true
+    }
+  ]
+}

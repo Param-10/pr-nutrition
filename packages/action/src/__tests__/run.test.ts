@@ -197,6 +197,97 @@ describe("read-only GitHub Action", () => {
     });
   });
 
+  it("applies a discovered .pr-nutrition.json by default", async () => {
+    writeFileSync(
+      join(repoPath, ".pr-nutrition.json"),
+      JSON.stringify({ schemaVersion: 1, paths: { generated: ["app.ts"] } }),
+    );
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+    });
+
+    const result = await runAction(io, {});
+
+    expect(result.analysis.summary.reviewableFiles).toBe(0);
+    expect(result.analysis.lowReviewValueFiles.map((file) => file.path)).toEqual(["app.ts"]);
+  });
+
+  it("ignores the repository config when use-config is false", async () => {
+    writeFileSync(
+      join(repoPath, ".pr-nutrition.json"),
+      JSON.stringify({ schemaVersion: 1, paths: { generated: ["app.ts"] } }),
+    );
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+      "use-config": "false",
+    });
+
+    const result = await runAction(io, {});
+
+    expect(result.analysis.summary.reviewableFiles).toBe(1);
+  });
+
+  it("uses a custom config-file path", async () => {
+    writeFileSync(
+      join(repoPath, "nutrition-config.json"),
+      JSON.stringify({ schemaVersion: 1, paths: { generated: ["app.ts"] } }),
+    );
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+      "config-file": "nutrition-config.json",
+    });
+
+    const result = await runAction(io, {});
+
+    expect(result.analysis.summary.reviewableFiles).toBe(0);
+  });
+
+  it("fails clearly on an invalid config file", async () => {
+    writeFileSync(join(repoPath, ".pr-nutrition.json"), "{not json");
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+    });
+
+    await expect(runAction(io, {})).rejects.toThrow("Invalid PR Nutrition config");
+  });
+
+  it("sets outputs when a config is applied", async () => {
+    writeFileSync(
+      join(repoPath, ".pr-nutrition.json"),
+      JSON.stringify({ schemaVersion: 1, paths: { generated: ["app.ts"] } }),
+    );
+    const outputDirectory = join(tempPath, "output");
+    const { io, outputs } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": outputDirectory,
+      "write-step-summary": "false",
+    });
+
+    await runAction(io, {});
+
+    expect(outputs.get("risk-level")).toBe("low");
+    expect(outputs.get("files-changed")).toBe("1");
+    expect(outputs.get("markdown-path")).toBe(join(outputDirectory, "pr-nutrition.md"));
+  });
+
   it("surfaces analyzer and missing-summary warnings", async () => {
     writeFileSync(join(repoPath, "package.json"), "{invalid\n", "utf8");
     commitAll(repoPath, "add malformed package manifest");

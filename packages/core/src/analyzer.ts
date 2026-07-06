@@ -1,6 +1,7 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, RISK_AREAS } from "./classifier.js";
+import { createConfigMatcher } from "./config.js";
 import { getGitDiff } from "./git.js";
 import { calculateRisk } from "./scorer.js";
 import type { AnalysisResult, AnalyzeOptions, AreaClassification, ChangedFile, PackageManager, RepositoryEvidence, RiskAreaId } from "./types.js";
@@ -85,11 +86,25 @@ function buildReviewFocus(areas: AreaClassification[], hasUncoveredProductionCha
   return focus.slice(0, 5);
 }
 
+const RISK_AREA_PRIORITY = new Map<RiskAreaId, number>(
+  RISK_AREAS.map((definition, index) => [definition.id, index]),
+);
+
+function resolveRiskArea(path: string, configArea: RiskAreaId | undefined): RiskAreaId | undefined {
+  const builtInArea = getRiskArea(path);
+  if (builtInArea === undefined) return configArea;
+  if (configArea === undefined) return builtInArea;
+  const builtInPriority = RISK_AREA_PRIORITY.get(builtInArea) ?? Number.MAX_SAFE_INTEGER;
+  const configPriority = RISK_AREA_PRIORITY.get(configArea) ?? Number.MAX_SAFE_INTEGER;
+  return configPriority < builtInPriority ? configArea : builtInArea;
+}
+
 export async function analyzePullRequest(options: AnalyzeOptions): Promise<AnalysisResult> {
   const resolvedRepoPath = resolve(options.repoPath);
   const gitDiff = getGitDiff(options.baseRef, options.headRef, resolvedRepoPath);
   const warnings = [...gitDiff.warnings];
   const evidence = collectRepositoryEvidence(resolvedRepoPath, warnings);
+  const configMatcher = createConfigMatcher(options.config);
   const areaFiles = new Map<RiskAreaId, string[]>();
   const lowReviewValueFiles: ChangedFile[] = [];
   let additions = 0;
@@ -99,8 +114,13 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   let hasTestRelevantChanges = false;
 
   const files = gitDiff.files.map((gitFile): ChangedFile => {
-    const isGenerated = gitFile.isGenerated || isGeneratedFile(gitFile.path);
-    const isLowValue = isGenerated || gitFile.isBinary || isLowValueFile(gitFile.path);
+    const isGenerated =
+      gitFile.isGenerated || isGeneratedFile(gitFile.path) || configMatcher.isGenerated(gitFile.path);
+    const isLowValue =
+      isGenerated ||
+      gitFile.isBinary ||
+      isLowValueFile(gitFile.path) ||
+      configMatcher.isLowReviewValue(gitFile.path);
     const file = { ...gitFile, isGenerated, isLowValue };
     const classificationPaths = [file.path, ...(file.previousPath === undefined ? [] : [file.previousPath])];
 
@@ -113,11 +133,21 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
       reviewableLines += file.additions + file.deletions;
     }
 
-    evidence.hasChangedTests ||= classificationPaths.some(isTestFile);
-    evidence.hasChangedDocs ||= classificationPaths.some(isDocFile);
-    hasTestRelevantChanges ||= !isLowValue && classificationPaths.some(isTestRelevantFile);
+    evidence.hasChangedTests ||= classificationPaths.some(
+      (path) => isTestFile(path) || configMatcher.isTest(path),
+    );
+    evidence.hasChangedDocs ||= classificationPaths.some(
+      (path) => isDocFile(path) || configMatcher.isDoc(path),
+    );
+    hasTestRelevantChanges ||=
+      !isLowValue &&
+      classificationPaths.some(
+        (path) => isTestRelevantFile(path) && !configMatcher.isTest(path) && !configMatcher.isDoc(path),
+      );
 
-    const riskArea = classificationPaths.map(getRiskArea).find((area) => area !== undefined);
+    const riskArea = classificationPaths
+      .map((path) => resolveRiskArea(path, configMatcher.getRiskArea(path)))
+      .find((area) => area !== undefined);
     if (riskArea !== undefined) {
       const paths = areaFiles.get(riskArea) ?? [];
       paths.push(file.path);

@@ -1,0 +1,14 @@
+{
+  "name": "custom-auth-path",
+  "expectedRiskLevel": "medium",
+  "minScore": 25,
+  "maxScore": 25,
+  "expectedAreas": ["authentication"],
+  "expectedLowReviewValue": [],
+  "mustIncludeFocus": ["authentication"],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 1,
+    "reviewableFiles": 1
+  }
+}

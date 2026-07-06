@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runCli, CliIO } from '../run.js';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -196,5 +196,81 @@ describe('pr-nutrition CLI integration', () => {
     const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'does-not-exist', '--head', 'HEAD'], io);
     expect(code).toBe(2);
     expect(getStderr()).toContain('pr-nutrition:');
+  });
+});
+
+describe('pr-nutrition CLI configuration', () => {
+  let tmpRepo: string;
+
+  const generatedConfig = JSON.stringify({
+    schemaVersion: 1,
+    paths: { generated: ['sdk/**'] },
+  });
+
+  beforeEach(() => {
+    tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-config-'));
+    initGitRepo(tmpRepo);
+    writeFileSync(path.join(tmpRepo, 'file.txt'), 'content\n');
+    commitAll(tmpRepo, 'initial');
+    mkdirSync(path.join(tmpRepo, 'sdk'));
+    writeFileSync(path.join(tmpRepo, 'sdk', 'client.ts'), 'export const value = 1;\n');
+    commitAll(tmpRepo, 'change');
+  });
+
+  afterEach(() => {
+    rmSync(tmpRepo, { recursive: true, force: true });
+  });
+
+  async function analyze(extraArgs: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(
+      ['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json', ...extraArgs],
+      io,
+    );
+    return { code, stdout: getStdout(), stderr: getStderr() };
+  }
+
+  it('applies an auto-discovered .pr-nutrition.json', async () => {
+    writeFileSync(path.join(tmpRepo, '.pr-nutrition.json'), generatedConfig);
+    const { code, stdout } = await analyze([]);
+    expect(code).toBe(0);
+    const json = JSON.parse(stdout);
+    expect(json.summary.reviewableFiles).toBe(0);
+    expect(json.lowReviewValueFiles.map((file: { path: string }) => file.path)).toEqual(['sdk/client.ts']);
+  });
+
+  it('applies an explicit --config file over discovery', async () => {
+    writeFileSync(path.join(tmpRepo, '.pr-nutrition.json'), JSON.stringify({ schemaVersion: 1 }));
+    writeFileSync(path.join(tmpRepo, 'custom-config.json'), generatedConfig);
+    const { code, stdout } = await analyze(['--config', 'custom-config.json']);
+    expect(code).toBe(0);
+    expect(JSON.parse(stdout).summary.reviewableFiles).toBe(0);
+  });
+
+  it('ignores a discovered config with --no-config', async () => {
+    writeFileSync(path.join(tmpRepo, '.pr-nutrition.json'), generatedConfig);
+    const { code, stdout } = await analyze(['--no-config']);
+    expect(code).toBe(0);
+    expect(JSON.parse(stdout).summary.reviewableFiles).toBe(1);
+  });
+
+  it('returns 2 on an invalid discovered config', async () => {
+    writeFileSync(path.join(tmpRepo, '.pr-nutrition.json'), '{not json');
+    const { code, stderr } = await analyze([]);
+    expect(code).toBe(2);
+    expect(stderr).toContain('Invalid PR Nutrition config');
+  });
+
+  it('returns 2 on an invalid explicit config', async () => {
+    writeFileSync(path.join(tmpRepo, 'bad.json'), JSON.stringify({ schemaVersion: 99 }));
+    const { code, stderr } = await analyze(['--config', 'bad.json']);
+    expect(code).toBe(2);
+    expect(stderr).toContain("unsupported 'schemaVersion'");
+  });
+
+  it('returns 1 when --config and --no-config are combined', async () => {
+    const { code, stderr } = await analyze(['--config', 'custom.json', '--no-config']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('--config cannot be combined with --no-config');
   });
 });

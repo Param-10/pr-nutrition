@@ -71,8 +71,22 @@ export interface AnalysisResult {
   warnings: string[];
 }
 
+export interface AnalysisConfigPaths {
+  generated?: string[];
+  lowReviewValue?: string[];
+  tests?: string[];
+  docs?: string[];
+  risk?: Partial<Record<RiskAreaId, string[]>>;
+}
+
+export interface AnalysisConfig {
+  schemaVersion: 1;
+  paths?: AnalysisConfigPaths;
+}
+
 export interface AnalyzeOptions {
   repoPath: string;
   baseRef: string;
   headRef: string;
+  config?: AnalysisConfig;
 }

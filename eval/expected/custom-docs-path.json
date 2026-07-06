@@ -1,0 +1,18 @@
+{
+  "name": "custom-docs-path",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["production changes detected without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedDocs": true,
+    "hasChangedTests": false
+  },
+  "expectedSummary": {
+    "filesChanged": 1,
+    "reviewableFiles": 1
+  }
+}

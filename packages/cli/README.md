@@ -33,6 +33,8 @@ pr-nutrition --json
 pr-nutrition --format json
 pr-nutrition --output pr-nutrition.md
 pr-nutrition --base origin/main --head HEAD
+pr-nutrition --config .pr-nutrition.json
+pr-nutrition --no-config
 ```
 
 ```text
@@ -43,11 +45,37 @@ pr-nutrition
   --format <markdown|json>      default: markdown
   --json                        alias for --format json
   --output <file>
+  --config <path>               default: .pr-nutrition.json
+  --no-config                   disable config loading
   --help
   --version
 ```
 
 The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
+
+## Configuration
+
+Configuration support is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include config support.
+
+The CLI automatically discovers `.pr-nutrition.json` at the repository root. Config extends built-in classification with repository-specific paths and never weakens built-in protections or changes risk scoring.
+
+```json
+{
+  "schemaVersion": 1,
+  "paths": {
+    "generated": ["src/generated/**"],
+    "lowReviewValue": ["snapshots/**"],
+    "tests": ["spec/**"],
+    "docs": ["handbook/**"],
+    "risk": {
+      "authentication": ["modules/identity/**"],
+      "api": ["contracts/**"]
+    }
+  }
+}
+```
+
+Patterns are POSIX-style globs matched against repo-relative paths. Validation is strict: unknown keys, invalid globs, parent traversal, symlinked config files, files over 64 KiB, and paths outside the repository are rejected. `--config` and `--no-config` cannot be combined (exit `1`); an invalid config exits `2`.
 
 ## Output Formats
 

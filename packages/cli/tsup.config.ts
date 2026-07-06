@@ -10,5 +10,5 @@ export default defineConfig({
   bundle: true,
   splitting: false,
   outExtension: () => ({ js: '.cjs' }),
-  noExternal: ['@pr-nutrition/core', 'commander']
+  noExternal: ['@pr-nutrition/core', 'commander', 'picomatch']
 });

@@ -12,6 +12,7 @@ All notable changes to PR Nutrition are documented in this file.
 - PR-only CI dogfood job that runs the committed Action through `uses: ./` without installing dependencies.
 - Deterministic false-positive evaluation corpus with `pnpm eval` and CI coverage.
 - CLI `--json` shortcut and quickstart docs for agent-friendly output.
+- Added strict JSON configuration for extending generated, low-review-value, test, documentation, and risk path classification.
 
 ### Security
 

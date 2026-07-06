@@ -17,5 +17,11 @@
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly",
     "typecheck": "tsc --build --pretty false"
+  },
+  "dependencies": {
+    "picomatch": "4.0.5"
+  },
+  "devDependencies": {
+    "@types/picomatch": "4.0.3"
   }
 }

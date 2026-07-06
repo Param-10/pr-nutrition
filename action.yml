@@ -21,6 +21,14 @@ inputs:
     description: Directory for pr-nutrition.md and pr-nutrition.json.
     required: false
     default: $RUNNER_TEMP/pr-nutrition
+  use-config:
+    description: Load the repository PR Nutrition config file when present.
+    required: false
+    default: "true"
+  config-file:
+    description: Config file path resolved relative to repo-path.
+    required: false
+    default: .pr-nutrition.json
 
 outputs:
   risk-score:

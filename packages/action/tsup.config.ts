@@ -6,7 +6,7 @@ export default defineConfig({
   dts: false,
   entry: ["src/index.ts"],
   format: ["cjs"],
-  noExternal: ["@actions/core", "@pr-nutrition/core"],
+  noExternal: ["@actions/core", "@pr-nutrition/core", "picomatch"],
   outExtension: () => ({ js: ".cjs" }),
   platform: "node",
   sourcemap: false,

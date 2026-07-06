@@ -145,6 +145,8 @@ pr-nutrition --json
 pr-nutrition --format json
 pr-nutrition --output pr-nutrition.md
 pr-nutrition --base origin/main --head HEAD
+pr-nutrition --config .pr-nutrition.json
+pr-nutrition --no-config
 ```
 
 Full contract:
@@ -152,6 +154,7 @@ Full contract:
 ```text
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
              [--format <markdown|json>] [--json] [--output <file>]
+             [--config <path>] [--no-config]
 ```
 
 Options:
@@ -164,8 +167,40 @@ Options:
 | `--format <markdown\|json>` | `markdown` | Output format          |
 | `--json`                    |    `false` | Alias for `--format json` |
 | `--output <file>`           |     stdout | Write output to a file |
+| `--config <path>`           | `.pr-nutrition.json` | Config file inside the repository |
+| `--no-config`               |    `false` | Disable config loading |
 
 The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
+
+### Configuration
+
+Configuration support is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include config support.
+
+PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
+
+```json
+{
+  "schemaVersion": 1,
+  "paths": {
+    "generated": ["src/generated/**"],
+    "lowReviewValue": ["snapshots/**"],
+    "tests": ["spec/**"],
+    "docs": ["handbook/**"],
+    "risk": {
+      "authentication": ["modules/identity/**"],
+      "api": ["contracts/**"]
+    }
+  }
+}
+```
+
+Rules:
+
+* Patterns are POSIX-style globs matched against repo-relative paths.
+* `generated`, `lowReviewValue`, `tests`, and `docs` extend the built-in path classification.
+* `risk.<area>` adds paths to the built-in risk areas (`migrations`, `authentication`, `ci`, `api`, `dependencies`, `configuration`).
+* Validation is strict: unknown keys, invalid globs, parent traversal, backslashes, symlinked config files, files over 64 KiB, and config paths outside the repository are rejected.
+* `--config <path>` overrides discovery; `--no-config` disables config loading; combining them is invalid usage (exit `1`). Invalid config exits `2`.
 
 Exit codes:
 
@@ -220,6 +255,18 @@ Inputs:
 | `head-ref` | Pull-request head SHA | Optional head ref. Must be provided with `base-ref`; explicit refs override event metadata. |
 | `write-step-summary` | `true` | Append the Markdown report to `$GITHUB_STEP_SUMMARY`. |
 | `output-directory` | `$RUNNER_TEMP/pr-nutrition` | Directory for report files. |
+| `use-config` | `true` | Load the repository `.pr-nutrition.json` when present. |
+| `config-file` | `.pr-nutrition.json` | Config file path resolved relative to `repo-path`. |
+
+Config example:
+
+```yaml
+with:
+  use-config: true
+  config-file: .pr-nutrition.json
+```
+
+Invalid config files fail the Action clearly. Config loading never adds GitHub API calls, write permissions, or PR mutation. The Action stable tag is still planned for `v0.2.0`.
 
 Outputs:
 

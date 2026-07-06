@@ -1,7 +1,13 @@
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { analyzePullRequest, renderJson, renderMarkdown } from "@pr-nutrition/core";
-import type { AnalysisResult } from "@pr-nutrition/core";
+import {
+  analyzePullRequest,
+  DEFAULT_CONFIG_FILE_NAME,
+  loadAnalysisConfig,
+  renderJson,
+  renderMarkdown,
+} from "@pr-nutrition/core";
+import type { AnalysisConfig, AnalysisResult } from "@pr-nutrition/core";
 
 const DEFAULT_OUTPUT_DIRECTORY = "$RUNNER_TEMP/pr-nutrition";
 
@@ -135,11 +141,25 @@ export async function runAction(
     "write-step-summary",
     true,
   );
+  const useConfig = parseBoolean(io.getInput("use-config"), "use-config", true);
+  const configFileInput = io.getInput("config-file").trim();
+
+  let config: AnalysisConfig | undefined;
+  if (useConfig) {
+    // The default config file is discovered (missing is fine); a custom path is required.
+    config = loadAnalysisConfig({
+      repoPath,
+      ...(configFileInput.length === 0 || configFileInput === DEFAULT_CONFIG_FILE_NAME
+        ? {}
+        : { configFile: configFileInput }),
+    });
+  }
 
   const analysis = await analyzePullRequest({
     repoPath,
     baseRef: refs.baseRef,
     headRef: refs.headRef,
+    ...(config === undefined ? {} : { config }),
   });
   const markdown = renderMarkdown(analysis);
   const json = renderJson(analysis);

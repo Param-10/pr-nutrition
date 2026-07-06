@@ -1,6 +1,7 @@
 import { Command, CommanderError } from "commander";
 import { writeFileSync } from "node:fs";
-import { analyzePullRequest, renderMarkdown, renderJson } from "@pr-nutrition/core";
+import { analyzePullRequest, loadAnalysisConfig, renderMarkdown, renderJson } from "@pr-nutrition/core";
+import type { AnalysisConfig } from "@pr-nutrition/core";
 
 export type CliIO = {
   stdout: (text: string) => void;
@@ -27,6 +28,8 @@ export async function runCli(
     .option("--format <format>", "output format: markdown or json", "markdown")
     .option("--json", "write JSON output (alias for --format json)")
     .option("--output <file>", "write output to a file instead of stdout")
+    .option("--config <path>", "config file path inside the repository (default: .pr-nutrition.json)")
+    .option("--no-config", "disable config file loading")
     .allowExcessArguments(false)
     .exitOverride()
     .configureOutput({
@@ -40,7 +43,18 @@ Examples:
   $ pr-nutrition --json
   $ pr-nutrition --output pr-nutrition.md
   $ pr-nutrition --base origin/main --head HEAD
+  $ pr-nutrition --config .pr-nutrition.json
+  $ pr-nutrition --no-config
 `);
+
+  const hasConfigOption = normalizedArgv.some(
+    (argument) => argument === "--config" || argument.startsWith("--config="),
+  );
+  const hasNoConfigOption = normalizedArgv.includes("--no-config");
+  if (hasConfigOption && hasNoConfigOption) {
+    io.stderr("pr-nutrition: error: --config cannot be combined with --no-config.\nRun `pr-nutrition --help` for usage.\n");
+    return 1;
+  }
 
   try {
     await program.parseAsync(normalizedArgv);
@@ -69,11 +83,25 @@ Examples:
 
   const format = options.json ? "json" : options.format;
 
+  let config: AnalysisConfig | undefined;
+  try {
+    config = loadAnalysisConfig({
+      repoPath: options.repo,
+      configFile: typeof options.config === "string" ? options.config : undefined,
+      useConfig: options.config !== false,
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    io.stderr(`pr-nutrition: ${msg}\n`);
+    return 2;
+  }
+
   try {
     const analysis = await analyzePullRequest({
       repoPath: options.repo,
       baseRef: options.base,
       headRef: options.head,
+      ...(config === undefined ? {} : { config }),
     });
 
     const output =
