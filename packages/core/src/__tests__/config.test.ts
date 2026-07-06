@@ -162,6 +162,24 @@ describe("validateAnalysisConfig", () => {
       validateAnalysisConfig({ schemaVersion: 1, paths: { tests: ["spec/[unclosed"] } }),
     ).toThrow("not a valid glob");
   });
+
+  it.each([
+    ["["],
+    ["]"],
+    ["{"],
+    ["spec/[unclosed"],
+  ])("rejects invalid glob pattern %s", (pattern) => {
+    expect(() =>
+      validateAnalysisConfig({ schemaVersion: 1, paths: { tests: [pattern] } }),
+    ).toThrow("not a valid glob");
+  });
+
+  it("accepts a lone closing brace as a literal glob", () => {
+    expect(validateAnalysisConfig({ schemaVersion: 1, paths: { tests: ["}"] } })).toEqual({
+      schemaVersion: 1,
+      paths: { tests: ["}"] },
+    });
+  });
 });
 
 describe("loadAnalysisConfig", () => {
@@ -350,5 +368,35 @@ describe("analysis with config", () => {
 
     expect(withoutConfig.areas).toEqual([]);
     expect(withoutConfig.risk.score).toBe(0);
+  });
+
+  it("matches dot-directories and dotfiles in custom risk paths", async () => {
+    const repoPath = createChangedRepository([".github/workflows/ci.yml"]);
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      config: {
+        schemaVersion: 1,
+        paths: { risk: { ci: [".github/workflows/**"] } },
+      },
+    });
+
+    expect(result.areas.map((area) => area.id)).toEqual(["ci"]);
+  });
+
+  it("matches dot-directories and dotfiles in custom docs paths", async () => {
+    const repoPath = createChangedRepository([".changeset/release.md"]);
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      config: {
+        schemaVersion: 1,
+        paths: { docs: [".changeset/**"] },
+      },
+    });
+
+    expect(result.evidence.hasChangedDocs).toBe(true);
   });
 });

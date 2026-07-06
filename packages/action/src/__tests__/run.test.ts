@@ -267,6 +267,34 @@ describe("read-only GitHub Action", () => {
     await expect(runAction(io, {})).rejects.toThrow("Invalid PR Nutrition config");
   });
 
+  it("allows a missing default config file", async () => {
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+      "config-file": ".pr-nutrition.json",
+    });
+
+    const result = await runAction(io, {});
+
+    expect(result.analysis.summary.filesChanged).toBe(1);
+  });
+
+  it("fails clearly when a custom config-file is missing", async () => {
+    const { io } = createIO({
+      "base-ref": baseSha,
+      "head-ref": headSha,
+      "repo-path": repoPath,
+      "output-directory": join(tempPath, "output"),
+      "write-step-summary": "false",
+      "config-file": "missing-custom.json",
+    });
+
+    await expect(runAction(io, {})).rejects.toThrow("config file not found");
+  });
+
   it("sets outputs when a config is applied", async () => {
     writeFileSync(
       join(repoPath, ".pr-nutrition.json"),
