@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { analyzePullRequest } from "../analyzer.js";
-import { loadAnalysisConfig, validateAnalysisConfig } from "../config.js";
+import { createConfigMatcher, loadAnalysisConfig, validateAnalysisConfig } from "../config.js";
 import type { AnalysisConfig } from "../types.js";
 
 const temporaryPaths: string[] = [];
@@ -246,11 +246,70 @@ describe("loadAnalysisConfig", () => {
     expect(() => loadAnalysisConfig({ repoPath })).toThrow("symbolic link");
   });
 
+  it("rejects a config path behind a symlinked parent directory", () => {
+    const repoPath = createRepository();
+    const outsideDir = mkdtempSync(join(tmpdir(), "pr-nutrition-config-outside-"));
+    temporaryPaths.push(outsideDir);
+    write(outsideDir, ".pr-nutrition.json", JSON.stringify({ schemaVersion: 1 }));
+    symlinkSync(outsideDir, join(repoPath, "configs"));
+    expect(() =>
+      loadAnalysisConfig({ repoPath, configFile: "configs/.pr-nutrition.json" }),
+    ).toThrow("symbolic link directory");
+  });
+
   it("rejects a config file over 64 KiB", () => {
     const repoPath = createRepository();
     const padding = "x".repeat(64 * 1024);
     write(repoPath, ".pr-nutrition.json", `{"schemaVersion":1,"padding":"${padding}"}`);
     expect(() => loadAnalysisConfig({ repoPath })).toThrow("64 KiB limit");
+  });
+});
+
+describe("config glob matching", () => {
+  const NEGATE_PATTERN_CONFIG: AnalysisConfig = {
+    schemaVersion: 1,
+    paths: { generated: ["!src/**"] },
+  };
+
+  it("accepts leading-bang patterns during validation", () => {
+    expect(validateAnalysisConfig(NEGATE_PATTERN_CONFIG)).toEqual(NEGATE_PATTERN_CONFIG);
+  });
+
+  it("treats leading-bang patterns as literals, not negation", () => {
+    const matcher = createConfigMatcher(NEGATE_PATTERN_CONFIG);
+
+    expect(matcher.isGenerated("README.md")).toBe(false);
+    expect(matcher.isGenerated("package.json")).toBe(false);
+    expect(matcher.isGenerated("src/index.ts")).toBe(false);
+    expect(matcher.isGenerated("!src/index.ts")).toBe(true);
+  });
+
+  it("does not classify ordinary paths as generated for leading-bang patterns", async () => {
+    const repoPath = createChangedRepository(["README.md", "package.json", "src/index.ts"]);
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      config: NEGATE_PATTERN_CONFIG,
+    });
+
+    for (const path of ["README.md", "package.json", "src/index.ts"]) {
+      const file = result.files.find((entry) => entry.path === path);
+      expect(file?.isGenerated).toBe(false);
+    }
+  });
+
+  it("matches literal paths that begin with a bang prefix", async () => {
+    const repoPath = createChangedRepository(["!src/index.ts"]);
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      config: NEGATE_PATTERN_CONFIG,
+    });
+
+    const file = result.files.find((entry) => entry.path === "!src/index.ts");
+    expect(file).toMatchObject({ isGenerated: true, isLowValue: true });
   });
 });
 

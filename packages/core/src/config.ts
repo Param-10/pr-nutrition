@@ -10,6 +10,7 @@ const SUPPORTED_SCHEMA_VERSION = 1;
 const TOP_LEVEL_KEYS = new Set(["schemaVersion", "paths"]);
 const PATH_GROUP_KEYS = new Set(["generated", "lowReviewValue", "tests", "docs", "risk"]);
 const RISK_AREA_IDS = new Set<string>(RISK_AREAS.map((area) => area.id));
+const PICOMATCH_OPTIONS = { dot: true, strictBrackets: true, nonegate: true } as const;
 
 export interface LoadAnalysisConfigOptions {
   repoPath: string;
@@ -57,7 +58,7 @@ function validatePattern(pattern: unknown, group: string): string {
     throw configError(`'paths.${group}' pattern must not traverse parent directories`);
   }
   try {
-    picomatch(pattern, { strictBrackets: true });
+    picomatch(pattern, PICOMATCH_OPTIONS);
   } catch {
     throw configError(`'paths.${group}' pattern is not a valid glob`);
   }
@@ -124,6 +125,42 @@ export function validateAnalysisConfig(value: unknown): AnalysisConfig {
   return config;
 }
 
+function assertConfigPathInsideRepository(
+  repoRoot: string,
+  configPath: string,
+  configFile: string,
+): void {
+  const relativePath = relative(repoRoot, configPath);
+  if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
+    throw configError(`config path must stay inside the repository (${configFile})`);
+  }
+
+  const segments = relativePath.split("/").filter((segment) => segment.length > 0);
+  let current = repoRoot;
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index];
+    if (segment === undefined) {
+      continue;
+    }
+    current = resolve(current, segment);
+    let metadata;
+    try {
+      metadata = lstatSync(current);
+    } catch {
+      if (index === segments.length - 1) {
+        return;
+      }
+      throw configError(`config path is not reachable (${configFile})`);
+    }
+    if (metadata.isSymbolicLink()) {
+      if (index === segments.length - 1) {
+        throw configError(`config file must not be a symbolic link (${configFile})`);
+      }
+      throw configError(`config path must not cross a symbolic link directory (${configFile})`);
+    }
+  }
+}
+
 export function loadAnalysisConfig(options: LoadAnalysisConfigOptions): AnalysisConfig | undefined {
   if (options.useConfig === false) {
     return undefined;
@@ -133,10 +170,7 @@ export function loadAnalysisConfig(options: LoadAnalysisConfigOptions): Analysis
   const isExplicit = options.configFile !== undefined;
   const configFile = options.configFile ?? DEFAULT_CONFIG_FILE_NAME;
   const configPath = isAbsolute(configFile) ? configFile : resolve(repoRoot, configFile);
-  const relativePath = relative(repoRoot, configPath);
-  if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
-    throw configError(`config path must stay inside the repository (${configFile})`);
-  }
+  assertConfigPathInsideRepository(repoRoot, configPath, configFile);
 
   let metadata;
   try {
@@ -146,10 +180,6 @@ export function loadAnalysisConfig(options: LoadAnalysisConfigOptions): Analysis
       throw configError(`config file not found (${configFile})`);
     }
     return undefined;
-  }
-
-  if (metadata.isSymbolicLink()) {
-    throw configError(`config file must not be a symbolic link (${configFile})`);
   }
   if (!metadata.isFile()) {
     throw configError(`config path is not a regular file (${configFile})`);
@@ -172,7 +202,7 @@ function compileGroup(patterns: string[] | undefined): (path: string) => boolean
   if (patterns === undefined || patterns.length === 0) {
     return () => false;
   }
-  const matchers = patterns.map((pattern) => picomatch(pattern, { dot: true, strictBrackets: true }));
+  const matchers = patterns.map((pattern) => picomatch(pattern, PICOMATCH_OPTIONS));
   return (path: string) => matchers.some((matches) => matches(path));
 }
 
