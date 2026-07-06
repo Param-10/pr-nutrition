@@ -105,6 +105,7 @@ Examples:
       baseRef: options.base,
       headRef: options.head,
       ...(config === undefined ? {} : { config }),
+      ...(options.explain === true ? { explain: true } : {}),
     });
 
     const renderOptions = { explain: options.explain === true };

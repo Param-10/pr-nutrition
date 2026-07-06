@@ -19,6 +19,7 @@ const KIND_ORDER: Record<AnalysisExplanation["kind"], number> = {
   docs: 4,
   binary: 5,
   rename: 6,
+  copy: 7,
 };
 
 function builtinRiskRuleId(area: RiskAreaId): string {
@@ -209,13 +210,23 @@ function explainFile(file: ChangedFile, matcher: ConfigMatcher): AnalysisExplana
     });
   }
 
-  if ((file.status === "renamed" || file.status === "copied") && file.previousPath !== undefined) {
+  if (file.status === "renamed" && file.previousPath !== undefined) {
     explanations.push({
       path: file.path,
       kind: "rename",
       ruleId: "builtin.git.rename",
       source: "git",
-      reason: `File ${file.status} from ${file.previousPath}.`,
+      reason: `File renamed from ${file.previousPath}.`,
+    });
+  }
+
+  if (file.status === "copied" && file.previousPath !== undefined) {
+    explanations.push({
+      path: file.path,
+      kind: "copy",
+      ruleId: "builtin.git.copy",
+      source: "git",
+      reason: `File copied from ${file.previousPath}.`,
     });
   }
 

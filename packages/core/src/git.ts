@@ -60,8 +60,8 @@ export function getGitDiff(baseRef: string, headRef: string, cwd: string): GitDi
   let nameStatusOutput: string;
   let numstatOutput: string;
   try {
-    nameStatusOutput = runGit(["diff", "--name-status", "--find-renames", "-z", mergeBase, headRef], cwd);
-    numstatOutput = runGit(["diff", "--numstat", "--find-renames", "-z", mergeBase, headRef], cwd);
+    nameStatusOutput = runGit(["diff", "--name-status", "--find-copies-harder", "-z", mergeBase, headRef], cwd);
+    numstatOutput = runGit(["diff", "--numstat", "--find-copies-harder", "-z", mergeBase, headRef], cwd);
   } catch (error) {
     throw new Error("Failed to read Git diff metadata", { cause: error });
   }

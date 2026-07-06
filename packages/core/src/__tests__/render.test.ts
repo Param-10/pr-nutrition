@@ -192,6 +192,38 @@ describe('Renderers', () => {
     expect(explained).toContain('Risk area: authentication');
   });
 
+  it('handles explain rendering safely when explanations are missing', () => {
+    const withoutExplanations: AnalysisResult = { ...minimalResult };
+    delete withoutExplanations.explanations;
+    expect(renderMarkdown(withoutExplanations, { explain: true })).not.toContain('## Explanation');
+    expect(JSON.parse(renderJson(withoutExplanations, { explain: true }))).not.toHaveProperty('explanations');
+  });
+
+  it('uses copy wording for copied-file explanations', () => {
+    const withCopy: AnalysisResult = {
+      ...minimalResult,
+      explanations: [
+        {
+          path: 'src/copied.ts',
+          kind: 'copy',
+          ruleId: 'builtin.git.copy',
+          source: 'git',
+          reason: 'File copied from src/source.ts.'
+        }
+      ]
+    };
+    const md = renderMarkdown(withCopy, { explain: true });
+    expect(md).toContain('— Copy');
+    expect(md).toContain('File copied from src/source.ts.');
+    expect(md).not.toContain('— Rename');
+
+    const json = JSON.parse(renderJson(withCopy, { explain: true }));
+    expect(json.explanations[0]).toMatchObject({
+      kind: 'copy',
+      ruleId: 'builtin.git.copy'
+    });
+  });
+
   it('escapes control characters in explanation paths', () => {
     const controlResult: AnalysisResult = {
       ...minimalResult,
@@ -211,7 +243,7 @@ describe('Renderers', () => {
   });
 
   it('caps the Markdown explanation list at 30 entries', () => {
-    const explanations: AnalysisResult['explanations'] = Array.from({ length: 42 }, (_, index) => ({
+    const explanations: NonNullable<AnalysisResult['explanations']> = Array.from({ length: 42 }, (_, index) => ({
       path: `src/file-${String(index).padStart(3, '0')}.ts`,
       kind: 'generated' as const,
       ruleId: 'builtin.path.generated',
@@ -223,7 +255,7 @@ describe('Renderers', () => {
   });
 
   it('omits explanations from JSON by default and includes all with explain', () => {
-    const explanations: AnalysisResult['explanations'] = [
+    const explanations: NonNullable<AnalysisResult['explanations']> = [
       {
         path: 'a.ts',
         kind: 'generated',

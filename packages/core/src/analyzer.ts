@@ -148,7 +148,6 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   const areas = buildAreas(areaFiles);
   const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
-  const explanations = buildExplanations(files, configMatcher);
 
   return {
     schemaVersion: 1,
@@ -172,6 +171,6 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
     lowReviewValueFiles,
     reviewFocus,
     warnings,
-    explanations,
+    ...(options.explain === true ? { explanations: buildExplanations(files, configMatcher) } : {}),
   };
 }

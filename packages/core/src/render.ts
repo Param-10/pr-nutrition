@@ -14,6 +14,7 @@ const KIND_HEADINGS: Record<AnalysisExplanation['kind'], string> = {
   docs: 'Docs',
   binary: 'Binary',
   rename: 'Rename',
+  copy: 'Copy',
 };
 
 const SOURCE_LABELS: Record<AnalysisExplanation['source'], string> = {
@@ -80,7 +81,7 @@ export function renderJson(result: AnalysisResult, options: RenderOptions = {}):
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
     warnings: result.warnings,
-    ...(options.explain ? { explanations: result.explanations } : {}),
+    ...(options.explain && result.explanations !== undefined ? { explanations: result.explanations } : {}),
   };
 
   return `${JSON.stringify(normalized, null, 2)}\n`;
@@ -214,7 +215,7 @@ export function renderMarkdown(result: AnalysisResult, options: RenderOptions = 
   }
 
   // Explanation (opt-in)
-  if (options.explain && result.explanations.length > 0) {
+  if (options.explain && result.explanations !== undefined && result.explanations.length > 0) {
     parts.push(renderExplanationLines(result.explanations));
   }
 

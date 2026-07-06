@@ -51,9 +51,10 @@ async function analyzeWith(
     repoPath,
     baseRef: "HEAD~1",
     headRef: "HEAD",
+    explain: true,
     ...(config === undefined ? {} : { config }),
   });
-  return result.explanations;
+  return result.explanations ?? [];
 }
 
 function find(
@@ -223,15 +224,48 @@ describe("priority and git explanations", () => {
     write(repoPath, "image.bin", Buffer.from([0, 1, 2, 0, 3, 255, 0]));
     commit(repoPath, "head");
 
-    const result = await analyzePullRequest({ repoPath, baseRef: "HEAD~1", headRef: "HEAD" });
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      explain: true,
+    });
 
-    expect(find(result.explanations, "image.bin", "binary")).toMatchObject({
+    expect(find(result.explanations ?? [], "image.bin", "binary")).toMatchObject({
       ruleId: "builtin.git.binary",
       source: "git",
     });
-    const rename = find(result.explanations, "src/new-name.ts", "rename");
+    const rename = find(result.explanations ?? [], "src/new-name.ts", "rename");
     expect(rename).toMatchObject({ ruleId: "builtin.git.rename", source: "git" });
+    expect(rename?.reason).toContain("renamed");
     expect(rename?.reason).toContain("src/old-name.ts");
     expect(Array.isArray(result.explanations)).toBe(true);
+  });
+
+  it("explains copied files with copy semantics", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "src/source.ts", `export const value = 1;\n${"filler line\n".repeat(20)}`);
+    commit(repoPath, "base");
+    write(repoPath, "src/copied.ts", `export const value = 1;\n${"filler line\n".repeat(20)}`);
+    commit(repoPath, "head");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "HEAD~1",
+      headRef: "HEAD",
+      explain: true,
+    });
+
+    const copy = find(result.explanations ?? [], "src/copied.ts", "copy");
+    expect(result.files).toContainEqual(
+      expect.objectContaining({
+        path: "src/copied.ts",
+        previousPath: "src/source.ts",
+        status: "copied",
+      }),
+    );
+    expect(copy).toMatchObject({ ruleId: "builtin.git.copy", source: "git" });
+    expect(copy?.reason).toContain("copied");
+    expect(copy?.reason).not.toContain("renamed");
   });
 });

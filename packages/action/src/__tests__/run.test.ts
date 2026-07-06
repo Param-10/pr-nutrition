@@ -155,8 +155,13 @@ describe("read-only GitHub Action", () => {
     const result = await runAction(io, { RUNNER_TEMP: tempPath });
 
     expect(result.markdownPath).toBe(join(tempPath, "pr-nutrition", "pr-nutrition.md"));
-    expect(readFileSync(result.markdownPath, "utf8")).toContain("# PR Nutrition");
-    expect(JSON.parse(readFileSync(result.jsonPath, "utf8"))).toMatchObject({
+    const markdown = readFileSync(result.markdownPath, "utf8");
+    const json = JSON.parse(readFileSync(result.jsonPath, "utf8"));
+    expect(markdown).toContain("# PR Nutrition");
+    expect(markdown).not.toContain("## Explanation");
+    expect(result.analysis.explanations).toBeUndefined();
+    expect(json).not.toHaveProperty("explanations");
+    expect(json).toMatchObject({
       schemaVersion: 1,
       summary: { filesChanged: 1 },
     });

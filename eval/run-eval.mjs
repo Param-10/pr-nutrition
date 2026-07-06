@@ -244,6 +244,7 @@ try {
       baseRef: "HEAD~1",
       headRef: "HEAD",
       ...(config === undefined ? {} : { config }),
+      ...(evalCase.expected.expectedExplanations === undefined ? {} : { explain: true }),
     });
     const failures = assertExpected(evalCase.name, analysis, evalCase.expected);
     results.push({

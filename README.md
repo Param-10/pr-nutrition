@@ -224,7 +224,7 @@ Each explanation carries a stable `ruleId` and a `source` of `builtin`, `config`
 | `builtin.path.generated` | Built-in generated-file rule |
 | `builtin.path.low-review-value` | Built-in low-review-value rule |
 | `builtin.path.test` / `builtin.path.docs` | Built-in test / documentation rule |
-| `builtin.git.binary` / `builtin.git.rename` / `builtin.git.generated` | Git-derived binary, rename, and linguist-generated signals |
+| `builtin.git.binary` / `builtin.git.rename` / `builtin.git.copy` / `builtin.git.generated` | Git-derived binary, rename, copy, and linguist-generated signals |
 | `config.paths.generated` / `.lowReviewValue` / `.tests` / `.docs` | Config path classification |
 | `config.paths.risk.<area>` | Config risk-area path (uses the built-in `RiskAreaId` names) |
 

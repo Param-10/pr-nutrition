@@ -52,7 +52,8 @@ export type ExplanationKind =
   | "test"
   | "docs"
   | "binary"
-  | "rename";
+  | "rename"
+  | "copy";
 
 export interface AnalysisExplanation {
   path: string;
@@ -90,7 +91,7 @@ export interface AnalysisResult {
   lowReviewValueFiles: ChangedFile[];
   reviewFocus: string[];
   warnings: string[];
-  explanations: AnalysisExplanation[];
+  explanations?: AnalysisExplanation[];
 }
 
 export interface AnalysisConfigPaths {
@@ -111,4 +112,5 @@ export interface AnalyzeOptions {
   baseRef: string;
   headRef: string;
   config?: AnalysisConfig;
+  explain?: boolean;
 }

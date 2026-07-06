@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly",
+    "build": "tsup && tsc --build --emitDeclarationOnly --force",
     "typecheck": "tsc --build --pretty false"
   },
   "dependencies": {

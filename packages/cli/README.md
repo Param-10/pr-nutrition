@@ -91,7 +91,7 @@ Explain output is available on `main` and planned for the next npm release. The 
 - Each entry has a stable `ruleId`, a `source` of `builtin`, `config`, or `git`, and a repo-relative `path`. Risk-area entries also include `area`; config entries include the matched `pattern`.
 - Explanations never include file contents, patch contents, absolute paths, or environment values, and are sorted deterministically.
 
-Built-in rule IDs: `builtin.path.<risk-area>`, `builtin.path.generated`, `builtin.path.low-review-value`, `builtin.path.test`, `builtin.path.docs`, `builtin.git.binary`, `builtin.git.rename`, `builtin.git.generated`. Config rule IDs: `config.paths.generated`, `config.paths.lowReviewValue`, `config.paths.tests`, `config.paths.docs`, `config.paths.risk.<area>`.
+Built-in rule IDs: `builtin.path.<risk-area>`, `builtin.path.generated`, `builtin.path.low-review-value`, `builtin.path.test`, `builtin.path.docs`, `builtin.git.binary`, `builtin.git.rename`, `builtin.git.copy`, `builtin.git.generated`. Config rule IDs: `config.paths.generated`, `config.paths.lowReviewValue`, `config.paths.tests`, `config.paths.docs`, `config.paths.risk.<area>`.
 
 ## Output Formats
 

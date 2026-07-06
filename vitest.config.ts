@@ -12,8 +12,5 @@ export default defineConfig({
       reportsDirectory: "coverage",
     },
     include: ["packages/**/*.test.ts", "scripts/**/*.test.ts"],
-    // Many suites spawn real git repositories; allow headroom under parallel load.
-    testTimeout: 30000,
-    hookTimeout: 30000,
   },
 });

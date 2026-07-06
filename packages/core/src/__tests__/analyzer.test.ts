@@ -75,6 +75,32 @@ describe("core analyzer", () => {
     expect(result.risk.reasons.filter((reason) => reason.points === 15)).toHaveLength(1);
     expect(result.evidence.hasChangedTests).toBe(true);
     expect(result.reviewFocus).toHaveLength(2);
+    expect(result.explanations).toBeUndefined();
+  });
+
+  it("includes explanations only when requested", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "feature"]);
+    write(repoPath, "src/auth/login.ts", "export const login = true;\n");
+    commit(repoPath, "feature");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "feature",
+      explain: true,
+    });
+
+    expect(result.explanations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "src/auth/login.ts",
+          ruleId: "builtin.path.authentication",
+        }),
+      ]),
+    );
   });
 
   it("uses the merge base so base-only changes are excluded", async () => {
