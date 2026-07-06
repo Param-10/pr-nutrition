@@ -5,14 +5,8 @@ A deterministic pull request review-readiness label generator.
 ## Installation
 
 ```bash
-npx pr-nutrition@latest
-npx pr-nutrition@latest --output pr-nutrition.md
-```
-
-After the next package release, the JSON shortcut will also be available:
-
-```bash
-npx pr-nutrition@latest --json
+npx pr-nutrition
+npx pr-nutrition --output pr-nutrition.md
 ```
 
 Or install it globally:
@@ -28,6 +22,8 @@ Current pinned `0.1.0` usage:
 npx pr-nutrition@0.1.0
 npx pr-nutrition@0.1.0 --format json
 ```
+
+In the next release, `--json` is also available as a shortcut for `--format json`.
 
 ## Usage
 

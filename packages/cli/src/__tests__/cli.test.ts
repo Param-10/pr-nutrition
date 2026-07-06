@@ -139,6 +139,23 @@ describe('pr-nutrition CLI integration', () => {
     expect(json.schemaVersion).toBe(1);
   });
 
+  it('outputs the same json shape for --json and --format json', async () => {
+    const formatJson = createMockIO();
+    const shortcutJson = createMockIO();
+
+    await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--format', 'json'], formatJson.io);
+    await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json'], shortcutJson.io);
+
+    expect(JSON.parse(shortcutJson.getStdout())).toEqual(JSON.parse(formatJson.getStdout()));
+  });
+
+  it('accepts a package-script separator before options', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json'], io);
+    expect(code).toBe(0);
+    expect(JSON.parse(getStdout()).schemaVersion).toBe(1);
+  });
+
   it('outputs json when --json and --format json are combined', async () => {
     const { io, getStdout } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json', '--format', 'json'], io);

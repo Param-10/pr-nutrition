@@ -115,14 +115,8 @@ Tests and docs affect the review guidance, but they do not reduce the risk score
 Use it directly with `npx`:
 
 ```bash
-npx pr-nutrition@latest
-npx pr-nutrition@latest --output pr-nutrition.md
-```
-
-After the next package release, the JSON shortcut will also be available:
-
-```bash
-npx pr-nutrition@latest --json
+npx pr-nutrition
+npx pr-nutrition --output pr-nutrition.md
 ```
 
 Or install globally:
@@ -138,6 +132,8 @@ Current pinned `0.1.0` usage:
 npx pr-nutrition@0.1.0
 npx pr-nutrition@0.1.0 --format json
 ```
+
+In the next release, `--json` is also available as a shortcut for `--format json`.
 
 ---
 
@@ -197,7 +193,7 @@ For agents and scripts:
 
 ## GitHub Action
 
-The read-only JavaScript Action is available from `main` by immutable commit SHA. It does not have a stable version tag yet; use the merge commit below until a versioned Action release exists.
+The GitHub Action is available from this repository, but it has not been given a stable release tag yet. For production usage, wait for the planned `v0.2.0` Action release. Until then, prefer the npm CLI or pin the Action to a full commit SHA you have reviewed.
 
 The Action uses pull-request event SHAs by default and requires a full-history checkout:
 
@@ -212,7 +208,7 @@ steps:
       persist-credentials: false
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@910a1a760bb12e7541d476d87b6c77421fad0246
+    uses: Param-10/pr-nutrition@<full-commit-sha>
 ```
 
 Inputs:

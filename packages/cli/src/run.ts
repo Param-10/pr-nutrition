@@ -14,6 +14,7 @@ export async function runCli(
     stderr: (text: string) => process.stderr.write(text),
   }
 ): Promise<number> {
+  const normalizedArgv = argv[2] === "--" ? [argv[0], argv[1], ...argv.slice(3)] : argv;
   const program = new Command();
 
   program
@@ -42,7 +43,7 @@ Examples:
 `);
 
   try {
-    await program.parseAsync(argv);
+    await program.parseAsync(normalizedArgv);
   } catch (err) {
     if (err instanceof CommanderError) {
       if (err.code === 'commander.version' || err.code === 'commander.helpDisplayed') {
