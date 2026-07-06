@@ -62,7 +62,7 @@ When adding a new path matcher or risk classification to `packages/core`:
 When changing Markdown or JSON output in `packages/core`:
 1. Update `packages/core/src/render.ts`.
 2. Run `pnpm test` and update any affected golden test fixtures.
-3. Run `node scripts/generate-examples.mjs` to regenerate output files in `examples/`.
+3. Run `pnpm examples` to regenerate output files in `examples/`.
 
 ## Working on the GitHub Action
 
@@ -79,5 +79,5 @@ When changing Action source:
 If you change how the CLI processes rules, you must update the `examples/` directory by running the script (if your changes affect the core model or output):
 
 ```bash
-node scripts/generate-examples.mjs
+pnpm examples
 ```

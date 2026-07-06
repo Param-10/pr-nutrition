@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runPackageManager } from "./package-manager.mjs";
 
 const EXPECTED_NAME = "pr-nutrition";
 const EXPECTED_VERSION = "0.1.0";
@@ -105,7 +106,10 @@ try {
     "CLI license differs from the repository license",
   );
 
-  run("pnpm", ["build"], { cwd: workspaceRoot });
+  runPackageManager(["build"], {
+    cwd: workspaceRoot,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 
   const packOutput = run(
     "npm",

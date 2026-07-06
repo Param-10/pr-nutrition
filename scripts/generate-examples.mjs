@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runPackageManager } from './package-manager.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ function git(repoPath, args) {
 }
 
 console.log('Building CLI...');
-run('pnpm', ['build'], { cwd: workspaceRoot });
+runPackageManager(['build'], { cwd: workspaceRoot, stdio: 'pipe' });
 
 console.log('Creating temp directory...');
 const tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-examples-'));

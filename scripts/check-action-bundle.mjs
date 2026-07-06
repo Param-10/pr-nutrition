@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { runPackageManager } from "./package-manager.mjs";
 
 const workspaceRoot = resolve(import.meta.dirname, "..");
 const bundlePath = join(workspaceRoot, "packages", "action", "dist", "index.cjs");
@@ -12,13 +12,11 @@ if (!existsSync(bundlePath)) {
 }
 
 const committedBundle = readFileSync(bundlePath);
-execFileSync("pnpm", ["--filter", "@pr-nutrition/core", "build"], {
+runPackageManager(["--filter", "@pr-nutrition/core", "build"], {
   cwd: workspaceRoot,
-  stdio: "inherit",
 });
-execFileSync("pnpm", ["--filter", "@pr-nutrition/action", "build"], {
+runPackageManager(["--filter", "@pr-nutrition/action", "build"], {
   cwd: workspaceRoot,
-  stdio: "inherit",
 });
 const rebuiltBundle = readFileSync(bundlePath);
 

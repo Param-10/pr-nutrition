@@ -14,6 +14,7 @@
     "action:bundle-check": "node scripts/check-action-bundle.mjs",
     "build": "pnpm --recursive --if-present build",
     "eval": "node eval/run-eval.mjs",
+    "examples": "node scripts/generate-examples.mjs",
     "lint": "eslint .",
     "release:check": "node scripts/release-check.mjs",
     "smoke": "pnpm --filter pr-nutrition smoke && pnpm --filter @pr-nutrition/action smoke",

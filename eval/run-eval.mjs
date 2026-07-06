@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { runPackageManager } from "../scripts/package-manager.mjs";
 
 const CASE_NAMES = [
   "docs-only",
@@ -29,7 +30,6 @@ const CASE_NAMES = [
 const workspaceRoot = path.resolve(import.meta.dirname, "..");
 const temporaryRoot = mkdtempSync(path.join(tmpdir(), "pr-nutrition-eval-"));
 const keepTemporaryRepos = process.env.PR_NUTRITION_KEEP_EVAL === "1";
-const npmExecPath = process.env.npm_execpath;
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -37,13 +37,6 @@ function run(command, args, options = {}) {
     stdio: ["ignore", "pipe", "pipe"],
     ...options,
   });
-}
-
-function runPackageManager(args, options = {}) {
-  if (!npmExecPath) {
-    throw new Error("Run eval through pnpm/corepack so npm_execpath is available.");
-  }
-  return run(process.execPath, [npmExecPath, ...args], options);
 }
 
 function readJson(filePath) {

@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runPackageManager } from "./package-manager.mjs";
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const temporaryRoot = mkdtempSync(path.join(tmpdir(), "pr-nutrition-smoke-"));
@@ -35,10 +36,9 @@ try {
   mkdirSync(consumerDirectory);
   mkdirSync(repositoryDirectory);
 
-  run(
-    "pnpm",
+  runPackageManager(
     ["--filter", "pr-nutrition", "pack", "--pack-destination", packDirectory],
-    { cwd: workspaceRoot },
+    { cwd: workspaceRoot, stdio: ["ignore", "pipe", "pipe"] },
   );
 
   const archiveName = readdirSync(packDirectory).find((name) => name.endsWith(".tgz"));
