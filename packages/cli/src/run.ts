@@ -30,6 +30,7 @@ export async function runCli(
     .option("--output <file>", "write output to a file instead of stdout")
     .option("--config <path>", "config file path inside the repository (default: .pr-nutrition.json)")
     .option("--no-config", "disable config file loading")
+    .option("--explain", "include a deterministic explanation of classifications")
     .allowExcessArguments(false)
     .exitOverride()
     .configureOutput({
@@ -45,6 +46,8 @@ Examples:
   $ pr-nutrition --base origin/main --head HEAD
   $ pr-nutrition --config .pr-nutrition.json
   $ pr-nutrition --no-config
+  $ pr-nutrition --explain
+  $ pr-nutrition --json --explain
 `);
 
   const hasConfigOption = normalizedArgv.some(
@@ -104,10 +107,11 @@ Examples:
       ...(config === undefined ? {} : { config }),
     });
 
+    const renderOptions = { explain: options.explain === true };
     const output =
       format === "json"
-        ? renderJson(analysis)
-        : renderMarkdown(analysis);
+        ? renderJson(analysis, renderOptions)
+        : renderMarkdown(analysis, renderOptions);
 
     if (options.output) {
       try {

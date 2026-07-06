@@ -147,6 +147,8 @@ pr-nutrition --output pr-nutrition.md
 pr-nutrition --base origin/main --head HEAD
 pr-nutrition --config .pr-nutrition.json
 pr-nutrition --no-config
+pr-nutrition --explain
+pr-nutrition --json --explain
 ```
 
 Full contract:
@@ -154,7 +156,7 @@ Full contract:
 ```text
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
              [--format <markdown|json>] [--json] [--output <file>]
-             [--config <path>] [--no-config]
+             [--config <path>] [--no-config] [--explain]
 ```
 
 Options:
@@ -169,6 +171,7 @@ Options:
 | `--output <file>`           |     stdout | Write output to a file |
 | `--config <path>`           | `.pr-nutrition.json` | Config file inside the repository |
 | `--no-config`               |    `false` | Disable config loading |
+| `--explain`                 |    `false` | Add deterministic classification explanations |
 
 The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
 
@@ -201,6 +204,48 @@ Rules:
 * `risk.<area>` adds paths to the built-in risk areas (`migrations`, `authentication`, `ci`, `api`, `dependencies`, `configuration`).
 * Validation is strict: unknown keys, invalid globs, parent traversal, backslashes, symlinked config files, files over 64 KiB, and config paths outside the repository are rejected.
 * `--config <path>` overrides discovery; `--no-config` disables config loading; combining them is invalid usage (exit `1`). Invalid config exits `2`.
+
+### Explanation
+
+Explain output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `--explain`.
+
+`--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
+
+* Markdown gains a compact `## Explanation` section (capped at the first 30 entries, then `...and N more`).
+* JSON gains an `explanations` array containing every explanation.
+* Explanations use only repo-relative paths. No file contents, patch contents, absolute paths, or environment values are included.
+* Explanations are sorted deterministically by path, kind, rule ID, and source.
+
+Each explanation carries a stable `ruleId` and a `source` of `builtin`, `config`, or `git`:
+
+| Rule ID | Meaning |
+| ------- | ------- |
+| `builtin.path.migrations` / `.authentication` / `.ci` / `.api` / `.dependencies` / `.configuration` | Built-in risk-area path rule |
+| `builtin.path.generated` | Built-in generated-file rule |
+| `builtin.path.low-review-value` | Built-in low-review-value rule |
+| `builtin.path.test` / `builtin.path.docs` | Built-in test / documentation rule |
+| `builtin.git.binary` / `builtin.git.rename` / `builtin.git.generated` | Git-derived binary, rename, and linguist-generated signals |
+| `config.paths.generated` / `.lowReviewValue` / `.tests` / `.docs` | Config path classification |
+| `config.paths.risk.<area>` | Config risk-area path (uses the built-in `RiskAreaId` names) |
+
+When both a built-in and a config rule match a file's risk area, the explanation reports the winning rule under the existing deterministic priority and notes the rule it ranked above.
+
+JSON shape with `--json --explain`:
+
+```json
+{
+  "explanations": [
+    {
+      "path": "src/auth/session.ts",
+      "kind": "risk-area",
+      "area": "authentication",
+      "ruleId": "builtin.path.authentication",
+      "source": "builtin",
+      "reason": "Path matched the built-in authentication and security rule."
+    }
+  ]
+}
+```
 
 Exit codes:
 

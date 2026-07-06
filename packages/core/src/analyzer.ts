@@ -1,7 +1,8 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, RISK_AREAS } from "./classifier.js";
+import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, resolveRiskArea, RISK_AREAS } from "./classifier.js";
 import { createConfigMatcher } from "./config.js";
+import { buildExplanations } from "./explain.js";
 import { getGitDiff } from "./git.js";
 import { calculateRisk } from "./scorer.js";
 import type { AnalysisResult, AnalyzeOptions, AreaClassification, ChangedFile, PackageManager, RepositoryEvidence, RiskAreaId } from "./types.js";
@@ -86,19 +87,6 @@ function buildReviewFocus(areas: AreaClassification[], hasUncoveredProductionCha
   return focus.slice(0, 5);
 }
 
-const RISK_AREA_PRIORITY = new Map<RiskAreaId, number>(
-  RISK_AREAS.map((definition, index) => [definition.id, index]),
-);
-
-function resolveRiskArea(path: string, configArea: RiskAreaId | undefined): RiskAreaId | undefined {
-  const builtInArea = getRiskArea(path);
-  if (builtInArea === undefined) return configArea;
-  if (configArea === undefined) return builtInArea;
-  const builtInPriority = RISK_AREA_PRIORITY.get(builtInArea) ?? Number.MAX_SAFE_INTEGER;
-  const configPriority = RISK_AREA_PRIORITY.get(configArea) ?? Number.MAX_SAFE_INTEGER;
-  return configPriority < builtInPriority ? configArea : builtInArea;
-}
-
 export async function analyzePullRequest(options: AnalyzeOptions): Promise<AnalysisResult> {
   const resolvedRepoPath = resolve(options.repoPath);
   const gitDiff = getGitDiff(options.baseRef, options.headRef, resolvedRepoPath);
@@ -146,7 +134,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
       );
 
     const riskArea = classificationPaths
-      .map((path) => resolveRiskArea(path, configMatcher.getRiskArea(path)))
+      .map((path) => resolveRiskArea(getRiskArea(path), configMatcher.getRiskArea(path)))
       .find((area) => area !== undefined);
     if (riskArea !== undefined) {
       const paths = areaFiles.get(riskArea) ?? [];
@@ -160,6 +148,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   const areas = buildAreas(areaFiles);
   const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
+  const explanations = buildExplanations(files, configMatcher);
 
   return {
     schemaVersion: 1,
@@ -183,5 +172,6 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
     lowReviewValueFiles,
     reviewFocus,
     warnings,
+    explanations,
   };
 }

@@ -10,5 +10,15 @@
   "expectedSummary": {
     "filesChanged": 1,
     "reviewableFiles": 1
-  }
+  },
+  "expectedExplanations": [
+    {
+      "path": "modules/identity/session.rb",
+      "kind": "risk-area",
+      "area": "authentication",
+      "ruleId": "config.paths.risk.authentication",
+      "source": "config",
+      "pattern": "modules/identity/**"
+    }
+  ]
 }

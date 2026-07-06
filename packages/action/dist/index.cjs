@@ -21102,6 +21102,20 @@ function isTestRelevantFile(path) {
   const lowerPath = path.toLowerCase();
   return /(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath) || /\.(c|cc|cpp|cs|go|java|js|jsx|php|py|rb|rs|sql|swift|ts|tsx)$/.test(lowerPath);
 }
+var RISK_AREA_PRIORITY = new Map(
+  RISK_AREAS.map((definition, index) => [definition.id, index])
+);
+function riskAreaPriority(area) {
+  return RISK_AREA_PRIORITY.get(area) ?? Number.MAX_SAFE_INTEGER;
+}
+function riskAreaLabel(area) {
+  return RISK_AREAS.find((definition) => definition.id === area)?.label ?? area;
+}
+function resolveRiskArea(builtInArea, configArea) {
+  if (builtInArea === void 0) return configArea;
+  if (configArea === void 0) return builtInArea;
+  return riskAreaPriority(configArea) < riskAreaPriority(builtInArea) ? configArea : builtInArea;
+}
 function getRiskArea(path) {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
@@ -21284,28 +21298,222 @@ function loadAnalysisConfig(options) {
 }
 function compileGroup(patterns) {
   if (patterns === void 0 || patterns.length === 0) {
-    return () => false;
+    return () => void 0;
   }
-  const matchers = patterns.map((pattern) => (0, import_picomatch.default)(pattern, PICOMATCH_OPTIONS));
-  return (path) => matchers.some((matches) => matches(path));
+  const matchers = patterns.map((pattern) => ({ pattern, isMatch: (0, import_picomatch.default)(pattern, PICOMATCH_OPTIONS) }));
+  return (path) => matchers.find((matcher) => matcher.isMatch(path))?.pattern;
 }
 function createConfigMatcher(config) {
   const paths = config?.paths;
-  const isGenerated = compileGroup(paths?.generated);
-  const isLowReviewValue = compileGroup(paths?.lowReviewValue);
-  const isTest = compileGroup(paths?.tests);
-  const isDoc = compileGroup(paths?.docs);
+  const matchGenerated = compileGroup(paths?.generated);
+  const matchLowReviewValue = compileGroup(paths?.lowReviewValue);
+  const matchTest = compileGroup(paths?.tests);
+  const matchDoc = compileGroup(paths?.docs);
   const riskMatchers = RISK_AREAS.map((area) => ({
     id: area.id,
-    matches: compileGroup(paths?.risk?.[area.id])
+    match: compileGroup(paths?.risk?.[area.id])
   }));
-  return {
-    isGenerated,
-    isLowReviewValue,
-    isTest,
-    isDoc,
-    getRiskArea: (path) => riskMatchers.find((area) => area.matches(path))?.id
+  const matchRiskArea = (path) => {
+    for (const area of riskMatchers) {
+      const pattern = area.match(path);
+      if (pattern !== void 0) return { area: area.id, pattern };
+    }
+    return void 0;
   };
+  return {
+    isGenerated: (path) => matchGenerated(path) !== void 0,
+    isLowReviewValue: (path) => matchLowReviewValue(path) !== void 0,
+    isTest: (path) => matchTest(path) !== void 0,
+    isDoc: (path) => matchDoc(path) !== void 0,
+    getRiskArea: (path) => matchRiskArea(path)?.area,
+    matchGenerated,
+    matchLowReviewValue,
+    matchTest,
+    matchDoc,
+    matchRiskArea
+  };
+}
+var KIND_ORDER = {
+  "risk-area": 0,
+  generated: 1,
+  "low-review-value": 2,
+  test: 3,
+  docs: 4,
+  binary: 5,
+  rename: 6
+};
+function builtinRiskRuleId(area) {
+  return `builtin.path.${area}`;
+}
+function configRiskRuleId(area) {
+  return `config.paths.risk.${area}`;
+}
+function makeExplanation(input) {
+  return {
+    path: input.path,
+    kind: input.kind,
+    ruleId: input.ruleId,
+    source: input.source,
+    reason: input.reason,
+    ...input.area === void 0 ? {} : { area: input.area },
+    ...input.pattern === void 0 ? {} : { pattern: input.pattern }
+  };
+}
+function explainRiskArea(classificationPaths, matcher) {
+  for (const path of classificationPaths) {
+    const builtInArea = getRiskArea(path);
+    const configMatch = matcher.matchRiskArea(path);
+    const resolved = resolveRiskArea(builtInArea, configMatch?.area);
+    if (resolved === void 0) continue;
+    const chosenConfig = configMatch !== void 0 && resolved === configMatch.area && (builtInArea === void 0 || riskAreaPriority(configMatch.area) < riskAreaPriority(builtInArea));
+    const hasConflict = builtInArea !== void 0 && configMatch !== void 0 && builtInArea !== configMatch.area;
+    const loser = chosenConfig ? builtInArea : configMatch?.area;
+    const conflictSuffix = hasConflict && loser !== void 0 ? ` Primary area is ${resolved} because it ranks above ${loser} in the deterministic risk priority.` : "";
+    if (chosenConfig && configMatch !== void 0) {
+      return {
+        path,
+        kind: "risk-area",
+        ruleId: configRiskRuleId(resolved),
+        source: "config",
+        reason: `Path matched the config ${resolved} risk pattern ${configMatch.pattern}.${conflictSuffix}`,
+        area: resolved,
+        pattern: configMatch.pattern
+      };
+    }
+    return {
+      path,
+      kind: "risk-area",
+      ruleId: builtinRiskRuleId(resolved),
+      source: "builtin",
+      reason: `Path matched the built-in ${riskAreaLabel(resolved).toLowerCase()} rule.${conflictSuffix}`,
+      area: resolved
+    };
+  }
+  return void 0;
+}
+function explainFile(file, matcher) {
+  const explanations = [];
+  const classificationPaths = [
+    file.path,
+    ...file.previousPath === void 0 ? [] : [file.previousPath]
+  ];
+  const riskExplanation = explainRiskArea(classificationPaths, matcher);
+  if (riskExplanation !== void 0) explanations.push(riskExplanation);
+  if (file.isGenerated) {
+    const configPattern = matcher.matchGenerated(file.path);
+    if (isGeneratedFile(file.path)) {
+      explanations.push({
+        path: file.path,
+        kind: "generated",
+        ruleId: "builtin.path.generated",
+        source: "builtin",
+        reason: "Path matched a built-in generated-file rule."
+      });
+    } else if (configPattern !== void 0) {
+      explanations.push({
+        path: file.path,
+        kind: "generated",
+        ruleId: "config.paths.generated",
+        source: "config",
+        reason: `Path matched the config generated pattern ${configPattern}.`,
+        pattern: configPattern
+      });
+    } else {
+      explanations.push({
+        path: file.path,
+        kind: "generated",
+        ruleId: "builtin.git.generated",
+        source: "git",
+        reason: "Marked generated by the Git linguist-generated attribute."
+      });
+    }
+  }
+  const lowValueConfigPattern = matcher.matchLowReviewValue(file.path);
+  if (isLowValueFile(file.path)) {
+    explanations.push({
+      path: file.path,
+      kind: "low-review-value",
+      ruleId: "builtin.path.low-review-value",
+      source: "builtin",
+      reason: "Path matched a built-in low-review-value rule."
+    });
+  } else if (lowValueConfigPattern !== void 0) {
+    explanations.push({
+      path: file.path,
+      kind: "low-review-value",
+      ruleId: "config.paths.lowReviewValue",
+      source: "config",
+      reason: `Path matched the config low-review-value pattern ${lowValueConfigPattern}.`,
+      pattern: lowValueConfigPattern
+    });
+  }
+  const testConfigPattern = matcher.matchTest(file.path);
+  if (isTestFile(file.path)) {
+    explanations.push({
+      path: file.path,
+      kind: "test",
+      ruleId: "builtin.path.test",
+      source: "builtin",
+      reason: "Path matched a built-in test rule."
+    });
+  } else if (testConfigPattern !== void 0) {
+    explanations.push({
+      path: file.path,
+      kind: "test",
+      ruleId: "config.paths.tests",
+      source: "config",
+      reason: `Path matched the config test pattern ${testConfigPattern}.`,
+      pattern: testConfigPattern
+    });
+  }
+  const docConfigPattern = matcher.matchDoc(file.path);
+  if (isDocFile(file.path)) {
+    explanations.push({
+      path: file.path,
+      kind: "docs",
+      ruleId: "builtin.path.docs",
+      source: "builtin",
+      reason: "Path matched a built-in documentation rule."
+    });
+  } else if (docConfigPattern !== void 0) {
+    explanations.push({
+      path: file.path,
+      kind: "docs",
+      ruleId: "config.paths.docs",
+      source: "config",
+      reason: `Path matched the config documentation pattern ${docConfigPattern}.`,
+      pattern: docConfigPattern
+    });
+  }
+  if (file.isBinary) {
+    explanations.push({
+      path: file.path,
+      kind: "binary",
+      ruleId: "builtin.git.binary",
+      source: "git",
+      reason: "Detected as a binary file by Git."
+    });
+  }
+  if ((file.status === "renamed" || file.status === "copied") && file.previousPath !== void 0) {
+    explanations.push({
+      path: file.path,
+      kind: "rename",
+      ruleId: "builtin.git.rename",
+      source: "git",
+      reason: `File ${file.status} from ${file.previousPath}.`
+    });
+  }
+  return explanations.map(makeExplanation);
+}
+function compareExplanations(a, b) {
+  if (a.path !== b.path) return a.path < b.path ? -1 : 1;
+  if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
+  if (a.ruleId !== b.ruleId) return a.ruleId < b.ruleId ? -1 : 1;
+  if (a.source !== b.source) return a.source < b.source ? -1 : 1;
+  return 0;
+}
+function buildExplanations(files, matcher) {
+  return files.flatMap((file) => explainFile(file, matcher)).sort(compareExplanations);
 }
 var MAX_GIT_OUTPUT = 50 * 1024 * 1024;
 function validateRevision(value, name) {
@@ -21522,17 +21730,6 @@ function buildReviewFocus(areas, hasUncoveredProductionChanges) {
   }
   return focus.slice(0, 5);
 }
-var RISK_AREA_PRIORITY = new Map(
-  RISK_AREAS.map((definition, index) => [definition.id, index])
-);
-function resolveRiskArea(path, configArea) {
-  const builtInArea = getRiskArea(path);
-  if (builtInArea === void 0) return configArea;
-  if (configArea === void 0) return builtInArea;
-  const builtInPriority = RISK_AREA_PRIORITY.get(builtInArea) ?? Number.MAX_SAFE_INTEGER;
-  const configPriority = RISK_AREA_PRIORITY.get(configArea) ?? Number.MAX_SAFE_INTEGER;
-  return configPriority < builtInPriority ? configArea : builtInArea;
-}
 async function analyzePullRequest(options) {
   const resolvedRepoPath = (0, import_path.resolve)(options.repoPath);
   const gitDiff = getGitDiff(options.baseRef, options.headRef, resolvedRepoPath);
@@ -21568,7 +21765,7 @@ async function analyzePullRequest(options) {
     hasTestRelevantChanges ||= !isLowValue && classificationPaths.some(
       (path) => isTestRelevantFile(path) && !configMatcher.isTest(path) && !configMatcher.isDoc(path)
     );
-    const riskArea = classificationPaths.map((path) => resolveRiskArea(path, configMatcher.getRiskArea(path))).find((area) => area !== void 0);
+    const riskArea = classificationPaths.map((path) => resolveRiskArea(getRiskArea(path), configMatcher.getRiskArea(path))).find((area) => area !== void 0);
     if (riskArea !== void 0) {
       const paths = areaFiles.get(riskArea) ?? [];
       paths.push(file.path);
@@ -21579,6 +21776,7 @@ async function analyzePullRequest(options) {
   const areas = buildAreas(areaFiles);
   const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
+  const explanations = buildExplanations(files, configMatcher);
   return {
     schemaVersion: 1,
     comparison: {
@@ -21600,9 +21798,25 @@ async function analyzePullRequest(options) {
     evidence,
     lowReviewValueFiles,
     reviewFocus,
-    warnings
+    warnings,
+    explanations
   };
 }
+var EXPLANATION_MARKDOWN_LIMIT = 30;
+var KIND_HEADINGS = {
+  "risk-area": "Risk area",
+  generated: "Generated",
+  "low-review-value": "Low review-value",
+  test: "Test",
+  docs: "Docs",
+  binary: "Binary",
+  rename: "Rename"
+};
+var SOURCE_LABELS = {
+  builtin: "built-in",
+  config: "config",
+  git: "git"
+};
 function boolText(value) {
   return value ? "Yes" : "No";
 }
@@ -21630,7 +21844,7 @@ function inlineCode(value) {
   }
   return `${fence}${value}${fence}`;
 }
-function renderJson(result) {
+function renderJson(result, options = {}) {
   const normalized = {
     schemaVersion: result.schemaVersion,
     comparison: {
@@ -21656,12 +21870,32 @@ function renderJson(result) {
     evidence: result.evidence,
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
-    warnings: result.warnings
+    warnings: result.warnings,
+    ...options.explain ? { explanations: result.explanations } : {}
   };
   return `${JSON.stringify(normalized, null, 2)}
 `;
 }
-function renderMarkdown(result) {
+function renderExplanationLines(explanations) {
+  const lines = ["## Explanation", ""];
+  const shown = explanations.slice(0, EXPLANATION_MARKDOWN_LIMIT);
+  for (const explanation of shown) {
+    const heading = explanation.kind === "risk-area" && explanation.area !== void 0 ? `${KIND_HEADINGS[explanation.kind]}: ${explanation.area}` : KIND_HEADINGS[explanation.kind];
+    lines.push(`- ${inlineCode(displayPath(explanation.path))} \u2014 ${heading}`);
+    lines.push(`  - Rule: ${inlineCode(explanation.ruleId)}`);
+    lines.push(`  - Source: ${SOURCE_LABELS[explanation.source]}`);
+    lines.push(`  - Reason: ${displayPath(explanation.reason)}`);
+    if (explanation.pattern !== void 0) {
+      lines.push(`  - Pattern: ${inlineCode(displayPath(explanation.pattern))}`);
+    }
+  }
+  const remaining = explanations.length - shown.length;
+  if (remaining > 0) {
+    lines.push(`- ...and ${remaining} more`);
+  }
+  return lines.join("\n");
+}
+function renderMarkdown(result, options = {}) {
   const parts = [];
   parts.push("# PR Nutrition");
   parts.push(`**Risk:** ${titleCaseRisk(result.risk.level)} (${result.risk.score}/100)`);
@@ -21740,6 +21974,9 @@ function renderMarkdown(result) {
       warningLines.push(`- ${warning2}`);
     }
     parts.push(warningLines.join("\n"));
+  }
+  if (options.explain && result.explanations.length > 0) {
+    parts.push(renderExplanationLines(result.explanations));
   }
   parts.push("---\nGenerated by PR Nutrition.");
   return parts.join("\n\n") + "\n";

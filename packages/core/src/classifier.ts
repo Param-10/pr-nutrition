@@ -122,6 +122,27 @@ export function isTestRelevantFile(path: string): boolean {
   );
 }
 
+const RISK_AREA_PRIORITY = new Map<RiskAreaId, number>(
+  RISK_AREAS.map((definition, index) => [definition.id, index]),
+);
+
+export function riskAreaPriority(area: RiskAreaId): number {
+  return RISK_AREA_PRIORITY.get(area) ?? Number.MAX_SAFE_INTEGER;
+}
+
+export function riskAreaLabel(area: RiskAreaId): string {
+  return RISK_AREAS.find((definition) => definition.id === area)?.label ?? area;
+}
+
+export function resolveRiskArea(
+  builtInArea: RiskAreaId | undefined,
+  configArea: RiskAreaId | undefined,
+): RiskAreaId | undefined {
+  if (builtInArea === undefined) return configArea;
+  if (configArea === undefined) return builtInArea;
+  return riskAreaPriority(configArea) < riskAreaPriority(builtInArea) ? configArea : builtInArea;
+}
+
 export function getRiskArea(path: string): RiskAreaId | undefined {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;

@@ -183,6 +183,22 @@ function assertExpected(caseName, result, expected) {
     assertEqual(failures, `summary.${key}`, result.summary[key], value);
   }
 
+  for (const expectedExplanation of expected.expectedExplanations ?? []) {
+    const match = result.explanations.find(
+      (entry) => entry.path === expectedExplanation.path && entry.kind === expectedExplanation.kind,
+    );
+    if (match === undefined) {
+      failures.push(
+        `explanations: expected ${expectedExplanation.kind} explanation for ${expectedExplanation.path}`,
+      );
+      continue;
+    }
+    for (const [key, value] of Object.entries(expectedExplanation)) {
+      if (key === "path" || key === "kind") continue;
+      assertEqual(failures, `explanations.${expectedExplanation.path}.${key}`, match[key], value);
+    }
+  }
+
   for (const expectedFile of expected.expectedFiles ?? []) {
     const actualFile = result.files.find((file) => file.path === expectedFile.path);
     if (actualFile === undefined) {

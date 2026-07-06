@@ -18,5 +18,14 @@
       "isGenerated": true,
       "isLowValue": true
     }
+  ],
+  "expectedExplanations": [
+    {
+      "path": "sdk/client.ts",
+      "kind": "generated",
+      "ruleId": "config.paths.generated",
+      "source": "config",
+      "pattern": "sdk/**"
+    }
   ]
 }

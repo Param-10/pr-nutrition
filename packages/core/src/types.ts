@@ -43,6 +43,27 @@ export interface RiskReason {
   points: number;
 }
 
+export type ExplanationSource = "builtin" | "config" | "git";
+
+export type ExplanationKind =
+  | "risk-area"
+  | "generated"
+  | "low-review-value"
+  | "test"
+  | "docs"
+  | "binary"
+  | "rename";
+
+export interface AnalysisExplanation {
+  path: string;
+  kind: ExplanationKind;
+  ruleId: string;
+  source: ExplanationSource;
+  reason: string;
+  area?: RiskAreaId;
+  pattern?: string;
+}
+
 export interface AnalysisResult {
   schemaVersion: 1;
   comparison: {
@@ -69,6 +90,7 @@ export interface AnalysisResult {
   lowReviewValueFiles: ChangedFile[];
   reviewFocus: string[];
   warnings: string[];
+  explanations: AnalysisExplanation[];
 }
 
 export interface AnalysisConfigPaths {

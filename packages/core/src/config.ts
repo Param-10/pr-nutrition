@@ -18,12 +18,22 @@ export interface LoadAnalysisConfigOptions {
   useConfig?: boolean;
 }
 
+export interface ConfigRiskMatch {
+  area: RiskAreaId;
+  pattern: string;
+}
+
 export interface ConfigMatcher {
   isGenerated: (path: string) => boolean;
   isLowReviewValue: (path: string) => boolean;
   isTest: (path: string) => boolean;
   isDoc: (path: string) => boolean;
   getRiskArea: (path: string) => RiskAreaId | undefined;
+  matchGenerated: (path: string) => string | undefined;
+  matchLowReviewValue: (path: string) => string | undefined;
+  matchTest: (path: string) => string | undefined;
+  matchDoc: (path: string) => string | undefined;
+  matchRiskArea: (path: string) => ConfigRiskMatch | undefined;
 }
 
 function configError(message: string): Error {
@@ -198,30 +208,43 @@ export function loadAnalysisConfig(options: LoadAnalysisConfigOptions): Analysis
   return validateAnalysisConfig(parsed);
 }
 
-function compileGroup(patterns: string[] | undefined): (path: string) => boolean {
+function compileGroup(patterns: string[] | undefined): (path: string) => string | undefined {
   if (patterns === undefined || patterns.length === 0) {
-    return () => false;
+    return () => undefined;
   }
-  const matchers = patterns.map((pattern) => picomatch(pattern, PICOMATCH_OPTIONS));
-  return (path: string) => matchers.some((matches) => matches(path));
+  const matchers = patterns.map((pattern) => ({ pattern, isMatch: picomatch(pattern, PICOMATCH_OPTIONS) }));
+  return (path: string) => matchers.find((matcher) => matcher.isMatch(path))?.pattern;
 }
 
 export function createConfigMatcher(config?: AnalysisConfig): ConfigMatcher {
   const paths = config?.paths;
-  const isGenerated = compileGroup(paths?.generated);
-  const isLowReviewValue = compileGroup(paths?.lowReviewValue);
-  const isTest = compileGroup(paths?.tests);
-  const isDoc = compileGroup(paths?.docs);
+  const matchGenerated = compileGroup(paths?.generated);
+  const matchLowReviewValue = compileGroup(paths?.lowReviewValue);
+  const matchTest = compileGroup(paths?.tests);
+  const matchDoc = compileGroup(paths?.docs);
   const riskMatchers = RISK_AREAS.map((area) => ({
     id: area.id,
-    matches: compileGroup(paths?.risk?.[area.id]),
+    match: compileGroup(paths?.risk?.[area.id]),
   }));
 
+  const matchRiskArea = (path: string): ConfigRiskMatch | undefined => {
+    for (const area of riskMatchers) {
+      const pattern = area.match(path);
+      if (pattern !== undefined) return { area: area.id, pattern };
+    }
+    return undefined;
+  };
+
   return {
-    isGenerated,
-    isLowReviewValue,
-    isTest,
-    isDoc,
-    getRiskArea: (path: string) => riskMatchers.find((area) => area.matches(path))?.id,
+    isGenerated: (path) => matchGenerated(path) !== undefined,
+    isLowReviewValue: (path) => matchLowReviewValue(path) !== undefined,
+    isTest: (path) => matchTest(path) !== undefined,
+    isDoc: (path) => matchDoc(path) !== undefined,
+    getRiskArea: (path) => matchRiskArea(path)?.area,
+    matchGenerated,
+    matchLowReviewValue,
+    matchTest,
+    matchDoc,
+    matchRiskArea,
   };
 }

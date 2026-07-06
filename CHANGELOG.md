@@ -13,6 +13,7 @@ All notable changes to PR Nutrition are documented in this file.
 - Deterministic false-positive evaluation corpus with `pnpm eval` and CI coverage.
 - CLI `--json` shortcut and quickstart docs for agent-friendly output.
 - Added strict JSON configuration for extending generated, low-review-value, test, documentation, and risk path classification.
+- Added `--explain` output with deterministic rule IDs for built-in and config-driven classifications.
 
 ### Security
 

@@ -274,3 +274,65 @@ describe('pr-nutrition CLI configuration', () => {
     expect(stderr).toContain('--config cannot be combined with --no-config');
   });
 });
+
+describe('pr-nutrition CLI explain', () => {
+  let tmpRepo: string;
+
+  beforeEach(() => {
+    tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-explain-'));
+    initGitRepo(tmpRepo);
+    writeFileSync(path.join(tmpRepo, 'file.txt'), 'content\n');
+    commitAll(tmpRepo, 'initial');
+    mkdirSync(path.join(tmpRepo, 'src', 'auth'), { recursive: true });
+    writeFileSync(path.join(tmpRepo, 'src', 'auth', 'login.ts'), 'export const login = 1;\n');
+    commitAll(tmpRepo, 'change');
+  });
+
+  afterEach(() => {
+    rmSync(tmpRepo, { recursive: true, force: true });
+  });
+
+  function baseArgs(): string[] {
+    return ['--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD'];
+  }
+
+  it('omits the Explanation section from Markdown by default', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs()], io);
+    expect(code).toBe(0);
+    expect(getStdout()).not.toContain('## Explanation');
+  });
+
+  it('includes an Explanation section with --explain', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--explain'], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('## Explanation');
+    expect(getStdout()).toContain('builtin.path.authentication');
+  });
+
+  it('omits explanations from JSON by default', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--json'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(json.explanations).toBeUndefined();
+  });
+
+  it('includes explanations with --json --explain and stays clean JSON', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--json', '--explain'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(Array.isArray(json.explanations)).toBe(true);
+    expect(json.explanations.some((entry: { ruleId: string }) => entry.ruleId === 'builtin.path.authentication')).toBe(true);
+    expect(getStderr()).toBe('');
+  });
+
+  it('supports --format json --explain', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--format', 'json', '--explain'], io);
+    expect(code).toBe(0);
+    expect(Array.isArray(JSON.parse(getStdout()).explanations)).toBe(true);
+  });
+});

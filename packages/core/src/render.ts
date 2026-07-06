@@ -1,4 +1,26 @@
-import type { AnalysisResult } from './types.js';
+import type { AnalysisExplanation, AnalysisResult } from './types.js';
+
+export interface RenderOptions {
+  explain?: boolean;
+}
+
+const EXPLANATION_MARKDOWN_LIMIT = 30;
+
+const KIND_HEADINGS: Record<AnalysisExplanation['kind'], string> = {
+  'risk-area': 'Risk area',
+  generated: 'Generated',
+  'low-review-value': 'Low review-value',
+  test: 'Test',
+  docs: 'Docs',
+  binary: 'Binary',
+  rename: 'Rename',
+};
+
+const SOURCE_LABELS: Record<AnalysisExplanation['source'], string> = {
+  builtin: 'built-in',
+  config: 'config',
+  git: 'git',
+};
 
 function boolText(value: boolean): 'Yes' | 'No' {
   return value ? 'Yes' : 'No';
@@ -31,7 +53,7 @@ function inlineCode(value: string): string {
   return `${fence}${value}${fence}`;
 }
 
-export function renderJson(result: AnalysisResult): string {
+export function renderJson(result: AnalysisResult, options: RenderOptions = {}): string {
   const normalized = {
     schemaVersion: result.schemaVersion,
     comparison: {
@@ -58,12 +80,36 @@ export function renderJson(result: AnalysisResult): string {
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
     warnings: result.warnings,
+    ...(options.explain ? { explanations: result.explanations } : {}),
   };
 
   return `${JSON.stringify(normalized, null, 2)}\n`;
 }
 
-export function renderMarkdown(result: AnalysisResult): string {
+function renderExplanationLines(explanations: AnalysisExplanation[]): string {
+  const lines = ['## Explanation', ''];
+  const shown = explanations.slice(0, EXPLANATION_MARKDOWN_LIMIT);
+  for (const explanation of shown) {
+    const heading =
+      explanation.kind === 'risk-area' && explanation.area !== undefined
+        ? `${KIND_HEADINGS[explanation.kind]}: ${explanation.area}`
+        : KIND_HEADINGS[explanation.kind];
+    lines.push(`- ${inlineCode(displayPath(explanation.path))} — ${heading}`);
+    lines.push(`  - Rule: ${inlineCode(explanation.ruleId)}`);
+    lines.push(`  - Source: ${SOURCE_LABELS[explanation.source]}`);
+    lines.push(`  - Reason: ${displayPath(explanation.reason)}`);
+    if (explanation.pattern !== undefined) {
+      lines.push(`  - Pattern: ${inlineCode(displayPath(explanation.pattern))}`);
+    }
+  }
+  const remaining = explanations.length - shown.length;
+  if (remaining > 0) {
+    lines.push(`- ...and ${remaining} more`);
+  }
+  return lines.join('\n');
+}
+
+export function renderMarkdown(result: AnalysisResult, options: RenderOptions = {}): string {
   const parts: string[] = [];
 
   // Header and Risk
@@ -165,6 +211,11 @@ export function renderMarkdown(result: AnalysisResult): string {
       warningLines.push(`- ${warning}`);
     }
     parts.push(warningLines.join('\n'));
+  }
+
+  // Explanation (opt-in)
+  if (options.explain && result.explanations.length > 0) {
+    parts.push(renderExplanationLines(result.explanations));
   }
 
   // Footer
