@@ -2,25 +2,32 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
-## Unreleased
+## 0.2.0 - Unreleased
 
 ### Added
 
-- Read-only GitHub Action wrapper that runs the deterministic core without GitHub API calls or pull request mutation.
-- Action Markdown step summaries, Markdown/JSON report files, and outputs for `risk-score`, `risk-level`, `files-changed`, `markdown-path`, and `json-path`.
-- Reproducible committed Node 24 Action bundle with a bundle-diff check.
-- PR-only CI dogfood job that runs the committed Action through `uses: ./` without installing dependencies.
-- Deterministic false-positive evaluation corpus with `pnpm eval` and CI coverage.
-- CLI `--json` shortcut and quickstart docs for agent-friendly output.
-- Added strict JSON configuration for extending generated, low-review-value, test, documentation, and risk path classification.
-- Added `--explain` output with deterministic rule IDs for built-in and config-driven classifications.
-- Added `pr-nutrition doctor` to diagnose Git refs, merge-base availability, repository evidence, and configuration issues.
+- Read-only GitHub Action.
+- Strict `.pr-nutrition.json` configuration.
+- `--json` shortcut for JSON output.
+- `--explain` with deterministic rule IDs.
+- `--focus-files` to group review-first, normal-review, and skim files.
+- `pr-nutrition doctor` for local setup diagnostics.
+- False-positive evaluation corpus.
+- Action dogfood workflow.
+- Bundle reproducibility checks.
+
+### Changed
+
+- Improved CLI quickstart and agent/script documentation.
+- Improved local-first positioning and privacy documentation.
+- Hardened package-manager invocation in scripts.
 
 ### Security
 
-- The Action requires caller-provided full Git history and does not fetch missing history automatically.
-- The Action keeps `contents: read` compatibility and does not require write permissions, PR comments, GitHub API usage, LLM calls, or network access during analysis.
-- The Action dependency boundary remains limited to exact-pinned `@actions/core@3.0.1` and the committed bundle.
+- Kept Action read-only with no GitHub API calls or PR mutation.
+- Kept analysis metadata-only: no patch contents, source contents, `.env` values, or repo script execution.
+- Preserved dependency-free packed CLI verification.
+- Kept the Action dependency boundary limited to exact-pinned `@actions/core@3.0.1` and the committed bundle.
 
 ## 0.1.0 - 2026-06-23
 

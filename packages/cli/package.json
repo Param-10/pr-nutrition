@@ -1,6 +1,6 @@
 {
   "name": "pr-nutrition",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A deterministic pull request review-readiness label generator.",
   "keywords": [
     "pull-request",

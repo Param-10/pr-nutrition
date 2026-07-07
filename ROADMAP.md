@@ -9,20 +9,23 @@ PR Nutrition's center of gravity is a local-first PR triage CLI. CI and GitHub A
 - docs and examples
 - generated and low-review-value path heuristics
 
-## v0.2 - in progress
+## v0.2 - release readiness
 - [x] read-only GitHub Action
 - [x] Markdown step summary, Markdown/JSON report files, and Action outputs
 - [x] reproducible committed Node 24 Action bundle
 - [x] PR-only real-runner Action dogfood
 - [x] false-positive evaluation cases
-- [ ] strict JSON config file support
-- [ ] richer package/script detection
-- [ ] more language/framework path rules
+- [x] package-manager script hardening
+- [x] strict JSON config file support
+- [x] CLI `--json` shortcut
+- [x] deterministic `--explain` output
+- [x] focused file review groups with `--focus-files`
+- [x] local setup diagnostics with `doctor`
 
 ## v0.3
-- CLI UX improvements such as `--explain`, `--focus-files`, and `doctor`
 - local workflow support that prints or saves reports without blocking by default
 - `--fail-on` for teams that explicitly opt into CI enforcement
+- richer deterministic framework and infrastructure rules
 - additional generated-file ecosystems
 - false-positive benchmark and issue template
 

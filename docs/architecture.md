@@ -20,9 +20,9 @@ Git metadata
 
 ## Stable Core Boundary
 
-`analyzePullRequest()` returns a versioned `AnalysisResult`. Changed areas are an ordered array with an identifier, label, and matching file paths. Risk reasons and review focus follow a fixed priority order, and focus is capped at five items. `renderMarkdown()` and `renderJson()` are pure transformations of that result.
+`analyzePullRequest()` returns a versioned `AnalysisResult`. Changed areas are an ordered array with an identifier, label, and matching file paths. Risk reasons, review focus, explanations, and focus-file groups follow fixed deterministic order. `renderMarkdown()` and `renderJson()` are pure transformations of that result.
 
-The core invokes Git directly, without a shell, and requests metadata only. GitHub API access, configuration parsing, AST parsing, and hosted or LLM services are outside the current trusted core boundary.
+The core invokes Git directly, without a shell, and requests metadata only. Strict config validation, deterministic path classification, and doctor diagnostics stay local. GitHub API access, AST parsing, hosted services, and LLM services are outside the current trusted core boundary.
 
 ## GitHub Action Boundary
 

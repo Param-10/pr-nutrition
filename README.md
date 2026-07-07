@@ -1,6 +1,8 @@
 # PR Nutrition
 
-PR Nutrition gives every pull request a simple review-readiness label.
+PR Nutrition is a local-first PR triage CLI.
+
+It gives every pull request a simple review-readiness label.
 
 AI coding tools are making it easier than ever to generate code, open PRs, and ship changes quickly. That is useful, but it also creates a new problem: reviewers now have to read through more changes, more often, with less context.
 
@@ -17,7 +19,7 @@ It does not review your code for you. It does not guess whether the code is corr
 npx pr-nutrition@latest
 ```
 
-That is it. You get a Markdown or JSON report you can read locally, save in CI, or attach to a pull request workflow.
+That is it. You get a Markdown or JSON report you can read locally, save in CI, or attach to a read-only pull request workflow.
 
 ---
 
@@ -133,7 +135,13 @@ npx pr-nutrition@0.1.0
 npx pr-nutrition@0.1.0 --format json
 ```
 
-In the next release, `--json` is also available as a shortcut for `--format json`.
+The next release is `v0.2.0`. After `v0.2.0` is published:
+
+```bash
+npx pr-nutrition@0.2.0
+npx pr-nutrition@0.2.0 --json
+npx pr-nutrition@0.2.0 doctor
+```
 
 ---
 
@@ -184,11 +192,11 @@ Options:
 | `--explain`                 |    `false` | Add deterministic classification explanations |
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
 
-The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
+The `--json` shortcut is prepared for `v0.2.0`. With the already-published `0.1.0`, use `--format json`.
 
 ### Configuration
 
-Configuration support is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include config support.
+Configuration support is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include config support.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -218,7 +226,7 @@ Rules:
 
 ### Explanation
 
-Explain output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `--explain`.
+Explain output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--explain`.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -260,7 +268,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `--focus-files`.
+Focus file output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--focus-files`.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -274,7 +282,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `doctor`.
+Doctor output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `doctor`.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -316,7 +324,15 @@ For agents and scripts:
 
 ## GitHub Action
 
-The GitHub Action is available from this repository, but it has not been given a stable release tag yet. For production usage, wait for the planned `v0.2.0` Action release. Until then, prefer the npm CLI or pin the Action to a full commit SHA you have reviewed.
+The GitHub Action is read-only and available from this repository, but it should be pinned to an immutable release tag only after that tag exists.
+
+After `v0.2.0` is released, use the Action with an immutable release tag:
+
+```yaml
+uses: Param-10/pr-nutrition@v0.2.0
+```
+
+Until then, prefer the npm CLI or pin the Action to a full commit SHA you have reviewed. Do not use a floating `@main` reference for production.
 
 The Action uses pull-request event SHAs by default and requires a full-history checkout:
 
@@ -354,7 +370,7 @@ with:
   config-file: .pr-nutrition.json
 ```
 
-Invalid config files fail the Action clearly. Config loading never adds GitHub API calls, write permissions, or PR mutation. The Action stable tag is still planned for `v0.2.0`.
+Invalid config files fail the Action clearly. Config loading never adds GitHub API calls, write permissions, or PR mutation. The `v0.2.0` Action tag should be used only after it is created by the release process.
 
 Outputs:
 
@@ -448,17 +464,19 @@ Current:
 * secure staged-release automation
 * read-only GitHub Action
 * committed reproducible Action bundle
+* strict JSON configuration
+* `--json`, `--explain`, `--focus-files`, and `doctor`
 * false-positive evaluation corpus
 
 Next:
 
-* strict JSON configuration
-* rule explanations and focused file guidance
 * richer deterministic framework and infrastructure rules
+* optional local workflow helpers
+* opt-in CI enforcement controls only after they are clearly scoped
 
 Later:
 
-* optional local workflow helpers
+* PR split hints
 * optional PR comments only after repeated user demand
 * more CI evidence
 * optional LLM wording polish, never risk decisions

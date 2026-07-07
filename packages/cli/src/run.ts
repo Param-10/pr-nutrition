@@ -73,7 +73,7 @@ export async function runCli(
   program
     .name("pr-nutrition")
     .description("A deterministic pull request review-readiness label generator.")
-    .version("0.1.0")
+    .version("0.2.0")
     .option("--repo <path>", "repository path", ".")
     .option("--base <ref>", "base ref", "main")
     .option("--head <ref>", "head ref", "HEAD")

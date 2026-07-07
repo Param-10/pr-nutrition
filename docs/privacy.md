@@ -24,10 +24,11 @@ PR Nutrition guarantees a secure, local-first analysis model.
 - `.env` contents
 - Secrets
 - Network calls
-- LLM calls in v0.1
+- LLM calls
+- Repository script execution
 - GitHub API responses
 - Pull request comments or review threads
 
-Git is executed directly without a shell. The analyzer uses only merge-base, name/status, numstat, and generated-attribute metadata; it never requests patch bodies.
+Git is executed directly without a shell. The analyzer uses only merge-base, name/status, numstat, and generated-attribute metadata; it never requests patch bodies. Config and doctor checks use repository-relative paths and approved metadata only.
 
 The GitHub Action does not fetch missing history automatically. Callers must use a full-history checkout so failures are explicit and reproducible.
