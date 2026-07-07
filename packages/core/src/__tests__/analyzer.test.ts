@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { analyzePullRequest } from "../analyzer.js";
 import { calculateRisk } from "../scorer.js";
-import type { AreaClassification, RiskAreaId } from "../types.js";
+import type { AnalysisResult, AreaClassification, FocusFile, FocusFileGroupTitle, RiskAreaId } from "../types.js";
 
 const repositories: string[] = [];
 
@@ -39,6 +39,10 @@ function commit(repoPath: string, message: string): void {
 
 function areas(...ids: RiskAreaId[]): AreaClassification[] {
   return ids.map((id) => ({ id, label: id, files: [`${id}.txt`] }));
+}
+
+function focusGroup(result: AnalysisResult, title: FocusFileGroupTitle): FocusFile[] {
+  return result.focusFiles?.find((group) => group.title === title)?.files ?? [];
 }
 
 afterEach(() => {
@@ -75,6 +79,7 @@ describe("core analyzer", () => {
     expect(result.risk.reasons.filter((reason) => reason.points === 15)).toHaveLength(1);
     expect(result.evidence.hasChangedTests).toBe(true);
     expect(result.reviewFocus).toHaveLength(2);
+    expect(result.focusFiles).toBeUndefined();
     expect(result.explanations).toBeUndefined();
   });
 
@@ -136,6 +141,124 @@ describe("core analyzer", () => {
     expect(result.files).toEqual([]);
     expect(result.areas).toEqual([]);
     expect(result.risk).toEqual({ score: 0, level: "low", reasons: [] });
+  });
+
+  it("builds deterministic focus file groups from existing classifications", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "feature"]);
+
+    write(repoPath, "migrations/002_add_users.sql", "create table users(id int);\n");
+    write(repoPath, "src/auth/session.ts", "export const session = true;\n");
+    write(repoPath, ".github/workflows/ci.yml", "name: CI\n");
+    write(repoPath, "packages/api/openapi.yaml", "openapi: 3.0.0\n");
+    write(repoPath, "src/user/z-profile.ts", "one\ntwo\nthree\n");
+    write(repoPath, "src/user/a-profile.ts", "one\n");
+    write(repoPath, "src/generated/client.ts", "export const client = true;\n");
+    write(repoPath, "pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+    write(repoPath, "assets/logo.png", Buffer.from([0x00, 0x01, 0x02, 0xff]));
+    commit(repoPath, "focus files");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "feature",
+      focusFiles: true,
+    });
+
+    expect(result.focusFiles?.map((group) => group.title)).toEqual([
+      "review-first",
+      "review-normally",
+      "skim",
+    ]);
+    expect(focusGroup(result, "review-first").map((file) => [file.path, file.area, file.reason])).toEqual([
+      ["migrations/002_add_users.sql", "migrations", "migration risk"],
+      ["src/auth/session.ts", "authentication", "authentication risk"],
+      [".github/workflows/ci.yml", "ci", "CI/workflow risk"],
+      ["packages/api/openapi.yaml", "api", "API contract risk"],
+    ]);
+    expect(focusGroup(result, "review-normally").map((file) => file.path)).toEqual([
+      "src/user/z-profile.ts",
+      "src/user/a-profile.ts",
+    ]);
+    expect(focusGroup(result, "skim").map((file) => [file.path, file.reason])).toEqual([
+      ["src/generated/client.ts", "generated"],
+      ["pnpm-lock.yaml", "lockfile"],
+      ["assets/logo.png", "binary file"],
+    ]);
+    expect(focusGroup(result, "skim")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "src/generated/client.ts", generated: true, lowReviewValue: true }),
+        expect.objectContaining({ path: "pnpm-lock.yaml", lowReviewValue: true }),
+        expect.objectContaining({ path: "assets/logo.png", binary: true, lowReviewValue: true }),
+      ]),
+    );
+
+    const groupedPaths = result.focusFiles?.flatMap((group) => group.files.map((file) => file.path)) ?? [];
+    expect(new Set(groupedPaths).size).toBe(groupedPaths.length);
+    expect(groupedPaths.sort()).toEqual(result.files.map((file) => file.path).sort());
+  });
+
+  it("uses config classifications in focus files without overriding higher-priority built-ins", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "feature"]);
+
+    write(repoPath, "migrations/001_init.sql", "create table demo(id int);\n");
+    write(repoPath, "private/session.logic", "session = true\n");
+    write(repoPath, "sdk/client.ts", "export const client = true;\n");
+    commit(repoPath, "config focus files");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "feature",
+      focusFiles: true,
+      config: {
+        schemaVersion: 1,
+        paths: {
+          generated: ["sdk/**"],
+          risk: {
+            authentication: ["private/**"],
+            configuration: ["migrations/**"],
+          },
+        },
+      },
+    });
+
+    expect(focusGroup(result, "review-first").map((file) => [file.path, file.area])).toEqual([
+      ["migrations/001_init.sql", "migrations"],
+      ["private/session.logic", "authentication"],
+    ]);
+    expect(focusGroup(result, "skim")).toEqual([
+      expect.objectContaining({
+        path: "sdk/client.ts",
+        reason: "generated",
+        generated: true,
+        lowReviewValue: true,
+      }),
+    ]);
+  });
+
+  it("returns empty focus groups for an empty diff when requested", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "main",
+      focusFiles: true,
+    });
+
+    expect(result.focusFiles).toEqual([
+      { title: "review-first", files: [] },
+      { title: "review-normally", files: [] },
+      { title: "skim", files: [] },
+    ]);
   });
 
   it("preserves rename, binary, deletion, and unusual-filename metadata", async () => {

@@ -37,6 +37,8 @@ pr-nutrition --config .pr-nutrition.json
 pr-nutrition --no-config
 pr-nutrition --explain
 pr-nutrition --json --explain
+pr-nutrition --focus-files
+pr-nutrition --json --focus-files
 ```
 
 ```text
@@ -50,6 +52,7 @@ pr-nutrition
   --config <path>               default: .pr-nutrition.json
   --no-config                   disable config loading
   --explain                     add classification explanations
+  --focus-files                 add file review priority groups
   --help
   --version
 ```
@@ -92,6 +95,14 @@ Explain output is available on `main` and planned for the next npm release. The 
 - Explanations never include file contents, patch contents, absolute paths, or environment values, and are sorted deterministically.
 
 Built-in rule IDs: `builtin.path.<risk-area>`, `builtin.path.generated`, `builtin.path.low-review-value`, `builtin.path.test`, `builtin.path.docs`, `builtin.git.binary`, `builtin.git.rename`, `builtin.git.copy`, `builtin.git.generated`. Config rule IDs: `config.paths.generated`, `config.paths.lowReviewValue`, `config.paths.tests`, `config.paths.docs`, `config.paths.risk.<area>`.
+
+## Focus files
+
+Focus file output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `--focus-files`.
+
+`--focus-files` adds deterministic file review groups: `Review first`, `Review normally`, and `Skim / low-review-value`. It works with Markdown, `--json`, `--format json`, and `--explain`.
+
+Default output is unchanged unless `--focus-files` is passed. The focus data uses existing classifications and never includes file contents, patch contents, absolute paths, or environment values.
 
 ## Output Formats
 

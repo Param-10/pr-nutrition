@@ -31,6 +31,7 @@ export async function runCli(
     .option("--config <path>", "config file path inside the repository (default: .pr-nutrition.json)")
     .option("--no-config", "disable config file loading")
     .option("--explain", "include a deterministic explanation of classifications")
+    .option("--focus-files", "include deterministic file review priority groups")
     .allowExcessArguments(false)
     .exitOverride()
     .configureOutput({
@@ -48,6 +49,7 @@ Examples:
   $ pr-nutrition --no-config
   $ pr-nutrition --explain
   $ pr-nutrition --json --explain
+  $ pr-nutrition --focus-files
 `);
 
   const hasConfigOption = normalizedArgv.some(
@@ -106,9 +108,13 @@ Examples:
       headRef: options.head,
       ...(config === undefined ? {} : { config }),
       ...(options.explain === true ? { explain: true } : {}),
+      ...(options.focusFiles === true ? { focusFiles: true } : {}),
     });
 
-    const renderOptions = { explain: options.explain === true };
+    const renderOptions = {
+      explain: options.explain === true,
+      focusFiles: options.focusFiles === true,
+    };
     const output =
       format === "json"
         ? renderJson(analysis, renderOptions)

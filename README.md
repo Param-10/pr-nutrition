@@ -149,6 +149,8 @@ pr-nutrition --config .pr-nutrition.json
 pr-nutrition --no-config
 pr-nutrition --explain
 pr-nutrition --json --explain
+pr-nutrition --focus-files
+pr-nutrition --json --focus-files
 ```
 
 Full contract:
@@ -156,7 +158,7 @@ Full contract:
 ```text
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
              [--format <markdown|json>] [--json] [--output <file>]
-             [--config <path>] [--no-config] [--explain]
+             [--config <path>] [--no-config] [--explain] [--focus-files]
 ```
 
 Options:
@@ -172,6 +174,7 @@ Options:
 | `--config <path>`           | `.pr-nutrition.json` | Config file inside the repository |
 | `--no-config`               |    `false` | Disable config loading |
 | `--explain`                 |    `false` | Add deterministic classification explanations |
+| `--focus-files`             |    `false` | Add deterministic file review priority groups |
 
 The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
 
@@ -246,6 +249,20 @@ JSON shape with `--json --explain`:
   ]
 }
 ```
+
+### Focus files
+
+Focus file output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `--focus-files`.
+
+`--focus-files` adds a compact reviewer workflow that separates changed files into:
+
+* `Review first`
+* `Review normally`
+* `Skim / low-review-value`
+
+Markdown gains a `## Focus files` section. JSON gains a `focusFiles` array. Default output is unchanged unless `--focus-files` is passed.
+
+The grouping uses existing deterministic classification data: risk areas, generated status, low-review-value status, binary status, and reviewable line counts. It does not read file contents, patch contents, absolute paths, or environment values.
 
 Exit codes:
 

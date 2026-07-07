@@ -65,6 +65,23 @@ export interface AnalysisExplanation {
   pattern?: string;
 }
 
+export type FocusFileGroupTitle = "review-first" | "review-normally" | "skim";
+
+export interface FocusFile {
+  path: string;
+  reason: string;
+  area?: RiskAreaId;
+  lowReviewValue?: boolean;
+  generated?: boolean;
+  binary?: boolean;
+  status?: ChangedFile["status"];
+}
+
+export interface FocusFileGroup {
+  title: FocusFileGroupTitle;
+  files: FocusFile[];
+}
+
 export interface AnalysisResult {
   schemaVersion: 1;
   comparison: {
@@ -90,6 +107,7 @@ export interface AnalysisResult {
   evidence: RepositoryEvidence;
   lowReviewValueFiles: ChangedFile[];
   reviewFocus: string[];
+  focusFiles?: FocusFileGroup[];
   warnings: string[];
   explanations?: AnalysisExplanation[];
 }
@@ -113,4 +131,5 @@ export interface AnalyzeOptions {
   headRef: string;
   config?: AnalysisConfig;
   explain?: boolean;
+  focusFiles?: boolean;
 }

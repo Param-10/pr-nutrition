@@ -21525,6 +21525,113 @@ function compareExplanations(a, b) {
 function buildExplanations(files, matcher) {
   return files.flatMap((file) => explainFile(file, matcher)).sort(compareExplanations);
 }
+var FOCUS_GROUP_TITLES = ["review-first", "review-normally", "skim"];
+var AREA_REASONS = {
+  migrations: "migration risk",
+  authentication: "authentication risk",
+  ci: "CI/workflow risk",
+  api: "API contract risk",
+  dependencies: "dependency risk",
+  configuration: "configuration risk"
+};
+var LOCKFILE_NAMES = /* @__PURE__ */ new Set([
+  "bun.lock",
+  "bun.lockb",
+  "cargo.lock",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "poetry.lock",
+  "uv.lock",
+  "yarn.lock"
+]);
+var SKIM_REASON_ORDER = /* @__PURE__ */ new Map([
+  ["generated", 0],
+  ["lockfile", 1],
+  ["binary file", 2],
+  ["vendored", 3],
+  ["low-review-value", 4]
+]);
+function reviewableLineCount(file) {
+  return file.isBinary ? 0 : file.additions + file.deletions;
+}
+function buildAreaByPath(areas) {
+  const areaByPath = /* @__PURE__ */ new Map();
+  for (const area of areas) {
+    for (const path of area.files) {
+      areaByPath.set(path, area.id);
+    }
+  }
+  return areaByPath;
+}
+function skimReason(file) {
+  const lowerPath = file.path.toLowerCase();
+  const name = lowerPath.split("/").at(-1) ?? lowerPath;
+  if (file.isGenerated) return "generated";
+  if (LOCKFILE_NAMES.has(name) || /\.lock$/.test(name)) return "lockfile";
+  if (file.isBinary) return "binary file";
+  if (/(^|\/)(vendor|__snapshots__)(\/|$)/.test(lowerPath)) return "vendored";
+  return "low-review-value";
+}
+function focusFile(file, reason, area) {
+  return {
+    path: file.path,
+    reason,
+    ...area === void 0 ? {} : { area },
+    ...file.isLowValue ? { lowReviewValue: true } : {},
+    ...file.isGenerated ? { generated: true } : {},
+    ...file.isBinary ? { binary: true } : {},
+    status: file.status
+  };
+}
+function emptyFocusGroups() {
+  return FOCUS_GROUP_TITLES.map((title) => ({ title, files: [] }));
+}
+function buildFocusFileGroups(files, areas) {
+  const areaByPath = buildAreaByPath(areas);
+  const reviewFirst = [];
+  const reviewNormally = [];
+  const skim = [];
+  for (const file of files) {
+    if (file.isGenerated || file.isLowValue || file.isBinary) {
+      skim.push(focusFile(file, skimReason(file)));
+      continue;
+    }
+    const area = areaByPath.get(file.path);
+    if (area !== void 0) {
+      reviewFirst.push(focusFile(file, AREA_REASONS[area], area));
+      continue;
+    }
+    reviewNormally.push(focusFile(file, "reviewable source change"));
+  }
+  const byReviewableLinesThenPath = (left, right) => {
+    const leftFile = files.find((file) => file.path === left.path);
+    const rightFile = files.find((file) => file.path === right.path);
+    const leftLines = leftFile === void 0 ? 0 : reviewableLineCount(leftFile);
+    const rightLines = rightFile === void 0 ? 0 : reviewableLineCount(rightFile);
+    if (leftLines !== rightLines) return rightLines - leftLines;
+    return left.path.localeCompare(right.path);
+  };
+  reviewFirst.sort((left, right) => {
+    const leftArea = left.area;
+    const rightArea = right.area;
+    if (leftArea !== void 0 && rightArea !== void 0 && leftArea !== rightArea) {
+      return riskAreaPriority(leftArea) - riskAreaPriority(rightArea);
+    }
+    return byReviewableLinesThenPath(left, right);
+  });
+  reviewNormally.sort(byReviewableLinesThenPath);
+  skim.sort((left, right) => {
+    const leftOrder = SKIM_REASON_ORDER.get(left.reason) ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = SKIM_REASON_ORDER.get(right.reason) ?? Number.MAX_SAFE_INTEGER;
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return left.path.localeCompare(right.path);
+  });
+  const groups = emptyFocusGroups();
+  groups[0] = { title: "review-first", files: reviewFirst };
+  groups[1] = { title: "review-normally", files: reviewNormally };
+  groups[2] = { title: "skim", files: skim };
+  return groups;
+}
 var MAX_GIT_OUTPUT = 50 * 1024 * 1024;
 function validateRevision(value, name) {
   const hasControlCharacter2 = Array.from(value).some((character) => {
@@ -21807,6 +21914,7 @@ async function analyzePullRequest(options) {
     evidence,
     lowReviewValueFiles,
     reviewFocus,
+    ...options.focusFiles === true ? { focusFiles: buildFocusFileGroups(files, areas) } : {},
     warnings,
     ...options.explain === true ? { explanations: buildExplanations(files, configMatcher) } : {}
   };
@@ -21826,6 +21934,11 @@ var SOURCE_LABELS = {
   builtin: "built-in",
   config: "config",
   git: "git"
+};
+var FOCUS_GROUP_HEADINGS = {
+  "review-first": "Review first",
+  "review-normally": "Review normally",
+  skim: "Skim / low-review-value"
 };
 function boolText(value) {
   return value ? "Yes" : "No";
@@ -21880,6 +21993,7 @@ function renderJson(result, options = {}) {
     evidence: result.evidence,
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
+    ...options.focusFiles && result.focusFiles !== void 0 ? { focusFiles: result.focusFiles } : {},
     warnings: result.warnings,
     ...options.explain && result.explanations !== void 0 ? { explanations: result.explanations } : {}
   };
@@ -21902,6 +22016,23 @@ function renderExplanationLines(explanations) {
   const remaining = explanations.length - shown.length;
   if (remaining > 0) {
     lines.push(`- ...and ${remaining} more`);
+  }
+  return lines.join("\n");
+}
+function renderFocusFileLines(groups) {
+  const lines = ["## Focus files", ""];
+  if (groups.every((group) => group.files.length === 0)) {
+    lines.push("No changed files.");
+    return lines.join("\n");
+  }
+  for (const group of groups) {
+    if (group.files.length === 0) continue;
+    if (lines.at(-1) !== "") lines.push("");
+    lines.push(`### ${FOCUS_GROUP_HEADINGS[group.title]}`);
+    lines.push("");
+    for (const file of group.files) {
+      lines.push(`- ${inlineCode(displayPath(file.path))} \u2014 ${displayPath(file.reason)}`);
+    }
   }
   return lines.join("\n");
 }
@@ -21932,6 +22063,9 @@ function renderMarkdown(result, options = {}) {
       focusLines.push(`- ${focus}`);
     }
     parts.push(focusLines.join("\n"));
+  }
+  if (options.focusFiles && result.focusFiles !== void 0) {
+    parts.push(renderFocusFileLines(result.focusFiles));
   }
   if (result.risk.reasons.length > 0) {
     const riskLines = ["## Risk reasons", ""];

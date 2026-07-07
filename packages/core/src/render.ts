@@ -1,7 +1,8 @@
-import type { AnalysisExplanation, AnalysisResult } from './types.js';
+import type { AnalysisExplanation, AnalysisResult, FocusFileGroup, FocusFileGroupTitle } from './types.js';
 
 export interface RenderOptions {
   explain?: boolean;
+  focusFiles?: boolean;
 }
 
 const EXPLANATION_MARKDOWN_LIMIT = 30;
@@ -21,6 +22,12 @@ const SOURCE_LABELS: Record<AnalysisExplanation['source'], string> = {
   builtin: 'built-in',
   config: 'config',
   git: 'git',
+};
+
+const FOCUS_GROUP_HEADINGS: Record<FocusFileGroupTitle, string> = {
+  'review-first': 'Review first',
+  'review-normally': 'Review normally',
+  skim: 'Skim / low-review-value',
 };
 
 function boolText(value: boolean): 'Yes' | 'No' {
@@ -80,6 +87,7 @@ export function renderJson(result: AnalysisResult, options: RenderOptions = {}):
     evidence: result.evidence,
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
+    ...(options.focusFiles && result.focusFiles !== undefined ? { focusFiles: result.focusFiles } : {}),
     warnings: result.warnings,
     ...(options.explain && result.explanations !== undefined ? { explanations: result.explanations } : {}),
   };
@@ -107,6 +115,26 @@ function renderExplanationLines(explanations: AnalysisExplanation[]): string {
   if (remaining > 0) {
     lines.push(`- ...and ${remaining} more`);
   }
+  return lines.join('\n');
+}
+
+function renderFocusFileLines(groups: FocusFileGroup[]): string {
+  const lines = ['## Focus files', ''];
+  if (groups.every((group) => group.files.length === 0)) {
+    lines.push('No changed files.');
+    return lines.join('\n');
+  }
+
+  for (const group of groups) {
+    if (group.files.length === 0) continue;
+    if (lines.at(-1) !== '') lines.push('');
+    lines.push(`### ${FOCUS_GROUP_HEADINGS[group.title]}`);
+    lines.push('');
+    for (const file of group.files) {
+      lines.push(`- ${inlineCode(displayPath(file.path))} — ${displayPath(file.reason)}`);
+    }
+  }
+
   return lines.join('\n');
 }
 
@@ -144,6 +172,10 @@ export function renderMarkdown(result: AnalysisResult, options: RenderOptions = 
       focusLines.push(`- ${focus}`);
     }
     parts.push(focusLines.join('\n'));
+  }
+
+  if (options.focusFiles && result.focusFiles !== undefined) {
+    parts.push(renderFocusFileLines(result.focusFiles));
   }
 
   // Risk Reasons

@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, resolveRiskArea, RISK_AREAS } from "./classifier.js";
 import { createConfigMatcher } from "./config.js";
 import { buildExplanations } from "./explain.js";
+import { buildFocusFileGroups } from "./focus.js";
 import { getGitDiff } from "./git.js";
 import { calculateRisk } from "./scorer.js";
 import type { AnalysisResult, AnalyzeOptions, AreaClassification, ChangedFile, PackageManager, RepositoryEvidence, RiskAreaId } from "./types.js";
@@ -170,6 +171,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
     evidence,
     lowReviewValueFiles,
     reviewFocus,
+    ...(options.focusFiles === true ? { focusFiles: buildFocusFileGroups(files, areas) } : {}),
     warnings,
     ...(options.explain === true ? { explanations: buildExplanations(files, configMatcher) } : {}),
   };

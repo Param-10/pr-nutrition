@@ -8,6 +8,7 @@ export {
 export type { ConfigMatcher, ConfigRiskMatch, LoadAnalysisConfigOptions } from "./config.js";
 export { renderMarkdown, renderJson } from "./render.js";
 export type { RenderOptions } from "./render.js";
+export { buildFocusFileGroups } from "./focus.js";
 export type {
   AnalysisConfig,
   AnalysisConfigPaths,
@@ -19,6 +20,9 @@ export type {
   ExplanationKind,
   ExplanationSource,
   FileStatus,
+  FocusFile,
+  FocusFileGroup,
+  FocusFileGroupTitle,
   PackageManager,
   RepositoryEvidence,
   RiskAreaId,

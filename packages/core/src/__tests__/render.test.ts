@@ -101,6 +101,51 @@ const minimalResult: AnalysisResult = {
   explanations: []
 };
 
+const focusResult: AnalysisResult = {
+  ...minimalResult,
+  focusFiles: [
+    {
+      title: 'review-first',
+      files: [
+        {
+          path: 'src/auth/session.ts',
+          reason: 'authentication risk',
+          area: 'authentication',
+          status: 'modified'
+        }
+      ]
+    },
+    {
+      title: 'review-normally',
+      files: [
+        {
+          path: 'src/user/profile.ts',
+          reason: 'reviewable source change',
+          status: 'added'
+        }
+      ]
+    },
+    {
+      title: 'skim',
+      files: [
+        {
+          path: 'src/generated/client.ts',
+          reason: 'generated',
+          generated: true,
+          lowReviewValue: true,
+          status: 'modified'
+        },
+        {
+          path: 'odd\npath.ts',
+          reason: 'low-review-value',
+          lowReviewValue: true,
+          status: 'added'
+        }
+      ]
+    }
+  ]
+};
+
 describe('Renderers', () => {
   it('matches full golden fixtures', () => {
     expect(renderMarkdown(fullResult)).toBe(readFixture('full.md'));
@@ -159,6 +204,32 @@ describe('Renderers', () => {
     const md = renderMarkdown(controlResult);
     expect(md).toContain('`\\x1b[31m-danger.png`');
     expect(md).not.toContain('\u001b');
+  });
+
+  it('omits focus files by default and includes them with the focus option', () => {
+    expect(renderMarkdown(focusResult)).not.toContain('## Focus files');
+    const md = renderMarkdown(focusResult, { focusFiles: true });
+    expect(md).toContain('## Focus files');
+    expect(md).toContain('### Review first');
+    expect(md).toContain('`src/auth/session.ts` — authentication risk');
+    expect(md).toContain('### Review normally');
+    expect(md).toContain('`src/user/profile.ts` — reviewable source change');
+    expect(md).toContain('### Skim / low-review-value');
+    expect(md).toContain('`src/generated/client.ts` — generated');
+    expect(md).toContain('`odd\\npath.ts` — low-review-value');
+    expect(md).not.toContain('`odd\npath.ts`');
+  });
+
+  it('renders an empty focus section cleanly when requested', () => {
+    const emptyFocus: AnalysisResult = {
+      ...minimalResult,
+      focusFiles: [
+        { title: 'review-first', files: [] },
+        { title: 'review-normally', files: [] },
+        { title: 'skim', files: [] }
+      ]
+    };
+    expect(renderMarkdown(emptyFocus, { focusFiles: true })).toContain('## Focus files\n\nNo changed files.');
   });
 
   it('omits the Explanation section by default and includes it with explain', () => {
@@ -269,6 +340,13 @@ describe('Renderers', () => {
     const explained = JSON.parse(renderJson(withExplanations, { explain: true }));
     expect(explained.explanations).toHaveLength(1);
     expect(Object.keys(explained).at(-1)).toBe('explanations');
+  });
+
+  it('omits focus files from JSON by default and includes them with the focus option', () => {
+    expect(JSON.parse(renderJson(focusResult))).not.toHaveProperty('focusFiles');
+    const focused = JSON.parse(renderJson(focusResult, { focusFiles: true }));
+    expect(focused.focusFiles).toEqual(focusResult.focusFiles);
+    expect(Object.keys(focused)).toContain('focusFiles');
   });
 
   it('JSON top-level key order is stable', () => {

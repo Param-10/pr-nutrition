@@ -44,6 +44,7 @@ describe('pr-nutrition CLI runner', () => {
     expect(code).toBe(0);
     expect(getStdout()).toContain('Usage: pr-nutrition');
     expect(getStdout()).toContain('--json');
+    expect(getStdout()).toContain('--focus-files');
     expect(getStdout()).toContain('Examples:');
     expect(getStdout()).toContain('pr-nutrition --output pr-nutrition.md');
   });
@@ -121,6 +122,16 @@ describe('pr-nutrition CLI integration', () => {
     const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD'], io);
     expect(code).toBe(0);
     expect(getStdout()).toContain('# PR Nutrition');
+    expect(getStdout()).not.toContain('## Focus files');
+  });
+
+  it('outputs focus files in markdown with --focus-files', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--focus-files'], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('## Focus files');
+    expect(getStdout()).toContain('### Review normally');
+    expect(getStdout()).toContain('`file.txt` — reviewable source change');
   });
 
   it('outputs json to stdout when --format json', async () => {
@@ -137,6 +148,42 @@ describe('pr-nutrition CLI integration', () => {
     expect(code).toBe(0);
     const json = JSON.parse(getStdout());
     expect(json.schemaVersion).toBe(1);
+    expect(json.focusFiles).toBeUndefined();
+  });
+
+  it('outputs focus files in json with --json --focus-files and keeps stderr clean', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--json', '--focus-files'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(json.focusFiles).toEqual([
+      {
+        title: 'review-first',
+        files: [],
+      },
+      {
+        title: 'review-normally',
+        files: [
+          {
+            path: 'file.txt',
+            reason: 'reviewable source change',
+            status: 'modified',
+          },
+        ],
+      },
+      {
+        title: 'skim',
+        files: [],
+      },
+    ]);
+    expect(getStderr()).toBe('');
+  });
+
+  it('outputs focus files in json with --format json --focus-files', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD', '--format', 'json', '--focus-files'], io);
+    expect(code).toBe(0);
+    expect(JSON.parse(getStdout()).focusFiles).toHaveLength(3);
   });
 
   it('outputs the same json shape for --json and --format json', async () => {
@@ -195,6 +242,14 @@ describe('pr-nutrition CLI integration', () => {
     const { io, getStderr } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'does-not-exist', '--head', 'HEAD'], io);
     expect(code).toBe(2);
+    expect(getStderr()).toContain('pr-nutrition:');
+  });
+
+  it('keeps focus-files errors on stderr', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--repo', tmpRepo, '--base', 'does-not-exist', '--head', 'HEAD', '--focus-files'], io);
+    expect(code).toBe(2);
+    expect(getStdout()).toBe('');
     expect(getStderr()).toContain('pr-nutrition:');
   });
 });
@@ -311,6 +366,15 @@ describe('pr-nutrition CLI explain', () => {
     expect(getStdout()).toContain('builtin.path.authentication');
   });
 
+  it('supports --explain with --focus-files in Markdown', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--explain', '--focus-files'], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('## Focus files');
+    expect(getStdout()).toContain('## Explanation');
+    expect(getStdout()).toContain('`src/auth/login.ts` — authentication risk');
+  });
+
   it('omits explanations from JSON by default', async () => {
     const { io, getStdout } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--json'], io);
@@ -326,6 +390,20 @@ describe('pr-nutrition CLI explain', () => {
     const json = JSON.parse(getStdout());
     expect(Array.isArray(json.explanations)).toBe(true);
     expect(json.explanations.some((entry: { ruleId: string }) => entry.ruleId === 'builtin.path.authentication')).toBe(true);
+    expect(getStderr()).toBe('');
+  });
+
+  it('supports --json --explain --focus-files and stays clean JSON', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', ...baseArgs(), '--json', '--explain', '--focus-files'], io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(Array.isArray(json.focusFiles)).toBe(true);
+    expect(Array.isArray(json.explanations)).toBe(true);
+    expect(json.focusFiles[0].files[0]).toMatchObject({
+      path: 'src/auth/login.ts',
+      area: 'authentication',
+    });
     expect(getStderr()).toBe('');
   });
 
