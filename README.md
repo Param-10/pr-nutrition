@@ -128,18 +128,11 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current pinned `0.1.0` usage:
-
-```bash
-npx pr-nutrition@0.1.0
-npx pr-nutrition@0.1.0 --format json
-```
-
-The next release is `v0.2.0`. After `v0.2.0` is published:
+Current stable npm release: `pr-nutrition@0.2.0`.
 
 ```bash
 npx pr-nutrition@0.2.0
-npx pr-nutrition@0.2.0 --json
+npx pr-nutrition@0.2.0 --help
 npx pr-nutrition@0.2.0 doctor
 ```
 
@@ -192,11 +185,11 @@ Options:
 | `--explain`                 |    `false` | Add deterministic classification explanations |
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
 
-The `--json` shortcut is prepared for `v0.2.0`. With the already-published `0.1.0`, use `--format json`.
+The `--json` shortcut is available in the current stable `0.2.0` release.
 
 ### Configuration
 
-Configuration support is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include config support.
+Configuration support is available in the current stable `0.2.0` release.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -226,7 +219,7 @@ Rules:
 
 ### Explanation
 
-Explain output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--explain`.
+Explain output is available in the current stable `0.2.0` release.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -268,7 +261,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--focus-files`.
+Focus file output is available in the current stable `0.2.0` release.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -282,7 +275,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `doctor`.
+Doctor output is available in the current stable `0.2.0` release.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -324,31 +317,24 @@ For agents and scripts:
 
 ## GitHub Action
 
-The GitHub Action is read-only and available from this repository, but it should be pinned to an immutable release tag only after that tag exists.
+Current Action tag: `Param-10/pr-nutrition@v0.2.0`.
 
-After `v0.2.0` is released, use the Action with an immutable release tag:
-
-```yaml
-uses: Param-10/pr-nutrition@v0.2.0
-```
-
-Until then, prefer the npm CLI or pin the Action to a full commit SHA you have reviewed. Do not use a floating `@main` reference for production.
-
-The Action uses pull-request event SHAs by default and requires a full-history checkout:
+Use the released Action tag with a read-only token and full-history checkout:
 
 ```yaml
 permissions:
   contents: read
 
 steps:
-  - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+  - uses: actions/checkout@v6
     with:
       fetch-depth: 0
-      persist-credentials: false
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@<full-commit-sha>
+    uses: Param-10/pr-nutrition@v0.2.0
 ```
+
+The Action is read-only, requires only `contents: read`, does not call the GitHub API, and does not post PR comments.
 
 Inputs:
 
@@ -370,7 +356,7 @@ with:
   config-file: .pr-nutrition.json
 ```
 
-Invalid config files fail the Action clearly. Config loading never adds GitHub API calls, write permissions, or PR mutation. The `v0.2.0` Action tag should be used only after it is created by the release process.
+Invalid config files fail the Action clearly. Config loading never adds GitHub API calls, write permissions, or PR mutation.
 
 Outputs:
 

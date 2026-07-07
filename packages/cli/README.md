@@ -16,18 +16,11 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current pinned `0.1.0` usage:
-
-```bash
-npx pr-nutrition@0.1.0
-npx pr-nutrition@0.1.0 --format json
-```
-
-The next release is `v0.2.0`. After `v0.2.0` is published:
+Current stable npm release: `pr-nutrition@0.2.0`.
 
 ```bash
 npx pr-nutrition@0.2.0
-npx pr-nutrition@0.2.0 --json
+npx pr-nutrition@0.2.0 --help
 npx pr-nutrition@0.2.0 doctor
 ```
 
@@ -76,11 +69,11 @@ pr-nutrition doctor
   --no-config                   disable config loading
 ```
 
-The `--json` shortcut is prepared for `v0.2.0`. With the already-published `0.1.0`, use `--format json`.
+The `--json` shortcut is available in the current stable `0.2.0` release.
 
 ## Configuration
 
-Configuration support is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include config support.
+Configuration support is available in the current stable `0.2.0` release.
 
 The CLI automatically discovers `.pr-nutrition.json` at the repository root. Config extends built-in classification with repository-specific paths and never weakens built-in protections or changes risk scoring.
 
@@ -104,7 +97,7 @@ Patterns are POSIX-style globs matched against repo-relative paths. Validation i
 
 ## Explanation
 
-Explain output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--explain`.
+Explain output is available in the current stable `0.2.0` release.
 
 `--explain` reports why each file was classified. Default output is unchanged unless `--explain` is passed.
 
@@ -117,7 +110,7 @@ Built-in rule IDs: `builtin.path.<risk-area>`, `builtin.path.generated`, `builti
 
 ## Focus files
 
-Focus file output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `--focus-files`.
+Focus file output is available in the current stable `0.2.0` release.
 
 `--focus-files` adds deterministic file review groups: `Review first`, `Review normally`, and `Skim / low-review-value`. It works with Markdown, `--json`, `--format json`, and `--explain`.
 
@@ -125,7 +118,7 @@ Default output is unchanged unless `--focus-files` is passed. The focus data use
 
 ## Doctor
 
-Doctor output is prepared for `v0.2.0`. The current published stable `0.1.0` CLI does not include `doctor`.
+Doctor output is available in the current stable `0.2.0` release.
 
 `pr-nutrition doctor` checks local setup before analysis: Git repository detection, base/head refs, merge-base availability, config validity, shallow repository status, package manager evidence, test/typecheck scripts, and CI workflow filenames.
 
