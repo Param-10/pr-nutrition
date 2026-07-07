@@ -22,7 +22,7 @@ export interface GitDiffResult {
   warnings: string[];
 }
 
-function validateRevision(value: string, name: string): void {
+export function validateRevision(value: string, name: string): void {
   const hasControlCharacter = Array.from(value).some((character) => {
     const code = character.charCodeAt(0);
     return code <= 0x1f || code === 0x7f;
@@ -32,7 +32,7 @@ function validateRevision(value: string, name: string): void {
   }
 }
 
-function runGit(args: string[], cwd: string, input?: string): string {
+export function runGit(args: string[], cwd: string, input?: string): string {
   return execFileSync("git", args, {
     cwd,
     encoding: "utf8",

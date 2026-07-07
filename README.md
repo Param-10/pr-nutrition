@@ -151,6 +151,11 @@ pr-nutrition --explain
 pr-nutrition --json --explain
 pr-nutrition --focus-files
 pr-nutrition --json --focus-files
+pr-nutrition doctor
+pr-nutrition doctor --json
+pr-nutrition doctor --base main --head HEAD
+pr-nutrition doctor --config .pr-nutrition.json
+pr-nutrition doctor --no-config
 ```
 
 Full contract:
@@ -159,6 +164,9 @@ Full contract:
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
              [--format <markdown|json>] [--json] [--output <file>]
              [--config <path>] [--no-config] [--explain] [--focus-files]
+
+pr-nutrition doctor [--repo <path>] [--base <ref>] [--head <ref>]
+                    [--json] [--config <path>] [--no-config]
 ```
 
 Options:
@@ -263,6 +271,24 @@ Focus file output is available on `main` and planned for the next npm release. T
 Markdown gains a `## Focus files` section. JSON gains a `focusFiles` array. Default output is unchanged unless `--focus-files` is passed.
 
 The grouping uses existing deterministic classification data: risk areas, generated status, low-review-value status, binary status, and reviewable line counts. It does not read file contents, patch contents, absolute paths, or environment values.
+
+### Doctor
+
+Doctor output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `doctor`.
+
+`pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
+
+```bash
+pr-nutrition doctor
+pr-nutrition doctor --json
+pr-nutrition doctor --base main --head HEAD
+pr-nutrition doctor --config .pr-nutrition.json
+pr-nutrition doctor --no-config
+```
+
+Doctor does not fetch history, call GitHub APIs, read patches, inspect `.env` contents, execute package scripts, or read workflow contents.
+
+JSON output uses `schemaVersion: 1`, `command: "doctor"`, a top-level `status` of `ok`, `warning`, or `error`, and stable check IDs such as `git.repository`, `git.merge-base`, `config.validation`, and `evidence.package-manager`.
 
 Exit codes:
 

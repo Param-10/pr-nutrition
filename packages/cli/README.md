@@ -39,6 +39,11 @@ pr-nutrition --explain
 pr-nutrition --json --explain
 pr-nutrition --focus-files
 pr-nutrition --json --focus-files
+pr-nutrition doctor
+pr-nutrition doctor --json
+pr-nutrition doctor --base main --head HEAD
+pr-nutrition doctor --config .pr-nutrition.json
+pr-nutrition doctor --no-config
 ```
 
 ```text
@@ -55,6 +60,14 @@ pr-nutrition
   --focus-files                 add file review priority groups
   --help
   --version
+
+pr-nutrition doctor
+  --repo <path>                 default: .
+  --base <ref>                  default: main
+  --head <ref>                  default: HEAD
+  --json
+  --config <path>               default: .pr-nutrition.json
+  --no-config                   disable config loading
 ```
 
 The `--json` shortcut is unreleased until the next npm package version is published. With the already-published `0.1.0`, use `--format json`.
@@ -103,6 +116,14 @@ Focus file output is available on `main` and planned for the next npm release. T
 `--focus-files` adds deterministic file review groups: `Review first`, `Review normally`, and `Skim / low-review-value`. It works with Markdown, `--json`, `--format json`, and `--explain`.
 
 Default output is unchanged unless `--focus-files` is passed. The focus data uses existing classifications and never includes file contents, patch contents, absolute paths, or environment values.
+
+## Doctor
+
+Doctor output is available on `main` and planned for the next npm release. The current stable `0.1.0` CLI does not include `doctor`.
+
+`pr-nutrition doctor` checks local setup before analysis: Git repository detection, base/head refs, merge-base availability, config validity, shallow repository status, package manager evidence, test/typecheck scripts, and CI workflow filenames.
+
+It supports `--json`, `--base`, `--head`, `--config`, and `--no-config`. Doctor never fetches history, calls GitHub APIs, reads patches, inspects `.env` contents, executes package scripts, or reads workflow contents.
 
 ## Output Formats
 

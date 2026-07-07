@@ -9,6 +9,7 @@ export type { ConfigMatcher, ConfigRiskMatch, LoadAnalysisConfigOptions } from "
 export { renderMarkdown, renderJson } from "./render.js";
 export type { RenderOptions } from "./render.js";
 export { buildFocusFileGroups } from "./focus.js";
+export { renderDoctorJson, renderDoctorText, runDoctor } from "./doctor.js";
 export type {
   AnalysisConfig,
   AnalysisConfigPaths,
@@ -16,6 +17,11 @@ export type {
   AnalysisResult,
   AnalyzeOptions,
   ChangedFile,
+  DoctorCheck,
+  DoctorCommandStatus,
+  DoctorOptions,
+  DoctorResult,
+  DoctorStatus,
   AreaClassification,
   ExplanationKind,
   ExplanationSource,

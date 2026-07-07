@@ -14,6 +14,7 @@ All notable changes to PR Nutrition are documented in this file.
 - CLI `--json` shortcut and quickstart docs for agent-friendly output.
 - Added strict JSON configuration for extending generated, low-review-value, test, documentation, and risk path classification.
 - Added `--explain` output with deterministic rule IDs for built-in and config-driven classifications.
+- Added `pr-nutrition doctor` to diagnose Git refs, merge-base availability, repository evidence, and configuration issues.
 
 ### Security
 

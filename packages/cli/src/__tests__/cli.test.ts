@@ -330,6 +330,156 @@ describe('pr-nutrition CLI configuration', () => {
   });
 });
 
+describe('pr-nutrition doctor CLI', () => {
+  let tmpRepo: string;
+
+  beforeEach(() => {
+    tmpRepo = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-doctor-'));
+    initGitRepo(tmpRepo);
+    writeFileSync(path.join(tmpRepo, 'README.md'), 'base\n');
+    commitAll(tmpRepo, 'initial');
+  });
+
+  afterEach(() => {
+    rmSync(tmpRepo, { recursive: true, force: true });
+  });
+
+  function doctorArgs(extraArgs: string[] = []): string[] {
+    return ['node', 'pr-nutrition', 'doctor', '--repo', tmpRepo, '--base', 'main', '--head', 'HEAD', ...extraArgs];
+  }
+
+  it('succeeds in a valid repo', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(doctorArgs(), io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('PR Nutrition Doctor');
+    expect(getStdout()).toContain('Status: OK');
+    expect(getStdout()).toContain('[PASS] Git repository found.');
+    expect(getStderr()).toBe('');
+  });
+
+  it('outputs clean JSON with stable check IDs', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(doctorArgs(['--json']), io);
+    expect(code).toBe(0);
+    const json = JSON.parse(getStdout());
+    expect(json.schemaVersion).toBe(1);
+    expect(json.command).toBe('doctor');
+    expect(['ok', 'warning', 'error']).toContain(json.status);
+    expect(json.checks.map((check: { id: string }) => check.id)).toEqual(
+      expect.arrayContaining([
+        'git.available',
+        'git.repository',
+        'git.root',
+        'git.base-ref',
+        'git.head-ref',
+        'git.merge-base',
+        'git.shallow',
+        'config.discovery',
+        'config.validation',
+      ]),
+    );
+    expect(getStdout()).not.toContain(tmpRepo);
+    expect(getStderr()).toBe('');
+  });
+
+  it('supports --repo for a repository path', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', 'doctor', '--repo', tmpRepo], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('Git repository found');
+  });
+
+  it('returns 2 for invalid repo, missing refs, and missing merge base without stderr noise', async () => {
+    const invalidRepo = createMockIO();
+    const invalidRepoCode = await runCli(['node', 'pr-nutrition', 'doctor', '--repo', '/not/a/repo'], invalidRepo.io);
+    expect(invalidRepoCode).toBe(2);
+    expect(invalidRepo.getStdout()).toContain('Repository path does not exist');
+    expect(invalidRepo.getStderr()).toBe('');
+
+    const missingBase = createMockIO();
+    const missingBaseCode = await runCli(doctorArgs(['--base', 'missing']), missingBase.io);
+    expect(missingBaseCode).toBe(2);
+    expect(missingBase.getStdout()).toContain('Base ref not found: missing.');
+    expect(missingBase.getStderr()).toBe('');
+
+    const missingHead = createMockIO();
+    const missingHeadCode = await runCli(doctorArgs(['--head', 'missing']), missingHead.io);
+    expect(missingHeadCode).toBe(2);
+    expect(missingHead.getStdout()).toContain('Head ref not found: missing.');
+    expect(missingHead.getStderr()).toBe('');
+
+    git(tmpRepo, ['checkout', '--orphan', 'unrelated']);
+    git(tmpRepo, ['rm', '-rf', '.']);
+    writeFileSync(path.join(tmpRepo, 'unrelated.txt'), 'unrelated\n');
+    commitAll(tmpRepo, 'unrelated');
+    const missingMergeBase = createMockIO();
+    const missingMergeBaseCode = await runCli(doctorArgs(['--base', 'main', '--head', 'unrelated']), missingMergeBase.io);
+    expect(missingMergeBaseCode).toBe(2);
+    expect(missingMergeBase.getStdout()).toContain('Merge base not found.');
+    expect(missingMergeBase.getStderr()).toBe('');
+  });
+
+  it('supports config options and keeps config conflicts as usage errors', async () => {
+    writeFileSync(path.join(tmpRepo, 'valid.json'), JSON.stringify({ schemaVersion: 1 }));
+    const valid = createMockIO();
+    expect(await runCli(doctorArgs(['--config', 'valid.json']), valid.io)).toBe(0);
+    expect(valid.getStdout()).toContain('Config valid: valid.json.');
+
+    const missing = createMockIO();
+    expect(await runCli(doctorArgs(['--config', 'missing.json']), missing.io)).toBe(2);
+    expect(missing.getStdout()).toContain('config file not found');
+    expect(missing.getStderr()).toBe('');
+
+    writeFileSync(path.join(tmpRepo, '.pr-nutrition.json'), '{not json');
+    const disabled = createMockIO();
+    expect(await runCli(doctorArgs(['--no-config']), disabled.io)).toBe(0);
+    expect(disabled.getStdout()).toContain('Config loading disabled by --no-config.');
+
+    const conflict = createMockIO();
+    expect(await runCli(doctorArgs(['--config', 'valid.json', '--no-config']), conflict.io)).toBe(1);
+    expect(conflict.getStdout()).toBe('');
+    expect(conflict.getStderr()).toContain('--config cannot be combined with --no-config');
+  });
+
+  it('keeps CLI usage errors on stderr', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', 'doctor', '--fake'], io);
+    expect(code).toBe(1);
+    expect(getStdout()).toBe('');
+    expect(getStderr()).toContain('unknown option');
+  });
+
+  it('does not fail on shallow-repository warnings', async () => {
+    const clonePath = mkdtempSync(path.join(tmpdir(), 'pr-nutrition-cli-doctor-shallow-'));
+    rmSync(clonePath, { recursive: true, force: true });
+    execFileSync('git', ['clone', '--depth', '1', `file://${tmpRepo}`, clonePath], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(
+      ['node', 'pr-nutrition', 'doctor', '--repo', clonePath, '--base', 'HEAD', '--head', 'HEAD'],
+      io,
+    );
+    rmSync(clonePath, { recursive: true, force: true });
+
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('Status: Warning');
+    expect(getStdout()).toContain('Repository appears shallow');
+    expect(getStderr()).toBe('');
+  });
+
+  it('does not include source contents, patch contents, or env values', async () => {
+    writeFileSync(path.join(tmpRepo, '.env.production'), 'SECRET_DO_NOT_PRINT=value\n');
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(doctorArgs(), io);
+    expect(code).toBe(0);
+    expect(getStdout()).not.toContain('SECRET_DO_NOT_PRINT');
+    expect(getStdout()).not.toContain('@@');
+  });
+});
+
 describe('pr-nutrition CLI explain', () => {
   let tmpRepo: string;
 

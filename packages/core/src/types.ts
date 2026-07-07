@@ -133,3 +133,31 @@ export interface AnalyzeOptions {
   explain?: boolean;
   focusFiles?: boolean;
 }
+
+export type DoctorStatus = "pass" | "warn" | "fail";
+
+export type DoctorCommandStatus = "ok" | "warning" | "error";
+
+export interface DoctorCheck {
+  id: string;
+  status: DoctorStatus;
+  message: string;
+  details?: Record<string, string | number | boolean>;
+}
+
+export interface DoctorResult {
+  schemaVersion: 1;
+  command: "doctor";
+  status: DoctorCommandStatus;
+  checks: DoctorCheck[];
+  warnings: string[];
+  errors: string[];
+}
+
+export interface DoctorOptions {
+  repoPath: string;
+  baseRef: string;
+  headRef: string;
+  configFile?: string;
+  useConfig?: boolean;
+}

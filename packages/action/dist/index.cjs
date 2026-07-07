@@ -21010,11 +21010,12 @@ var import_node_fs = require("fs");
 var import_node_path = require("path");
 
 // ../core/dist/index.js
-var import_fs2 = require("fs");
 var import_path = require("path");
-var import_fs3 = require("fs");
+var import_fs2 = require("fs");
 var import_path2 = require("path");
 var import_picomatch = __toESM(require_picomatch2(), 1);
+var import_fs3 = require("fs");
+var import_path3 = require("path");
 var import_child_process = require("child_process");
 var DEPENDENCY_FILE_NAMES = /* @__PURE__ */ new Set([
   "bun.lock",
@@ -21249,7 +21250,7 @@ function assertConfigPathInsideRepository(repoRoot, configPath, configFile) {
     current = (0, import_path2.resolve)(current, segment);
     let metadata;
     try {
-      metadata = (0, import_fs3.lstatSync)(current);
+      metadata = (0, import_fs2.lstatSync)(current);
     } catch {
       if (index === segments.length - 1) {
         return;
@@ -21275,7 +21276,7 @@ function loadAnalysisConfig(options) {
   assertConfigPathInsideRepository(repoRoot, configPath, configFile);
   let metadata;
   try {
-    metadata = (0, import_fs3.lstatSync)(configPath);
+    metadata = (0, import_fs2.lstatSync)(configPath);
   } catch {
     if (isExplicit) {
       throw configError(`config file not found (${configFile})`);
@@ -21290,7 +21291,7 @@ function loadAnalysisConfig(options) {
   }
   let parsed;
   try {
-    parsed = JSON.parse((0, import_fs3.readFileSync)(configPath, "utf8"));
+    parsed = JSON.parse((0, import_fs2.readFileSync)(configPath, "utf8"));
   } catch {
     throw configError(`config file is not valid JSON (${configFile})`);
   }
@@ -21332,6 +21333,57 @@ function createConfigMatcher(config) {
     matchDoc,
     matchRiskArea
   };
+}
+var MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
+var MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
+function detectPackageManager(repoPath) {
+  const candidates = [
+    ["pnpm-lock.yaml", "pnpm"],
+    ["yarn.lock", "yarn"],
+    ["package-lock.json", "npm"],
+    ["uv.lock", "uv"],
+    ["poetry.lock", "poetry"],
+    ["Cargo.lock", "cargo"],
+    ["go.mod", "go"]
+  ];
+  return candidates.find(([path]) => (0, import_fs3.existsSync)((0, import_path3.join)(repoPath, path)))?.[1] ?? "unknown";
+}
+function collectRepositoryEvidence(repoPath, warnings) {
+  const manifests = MANIFESTS.filter((manifest) => (0, import_fs3.existsSync)((0, import_path3.join)(repoPath, manifest)));
+  const evidence = {
+    hasChangedTests: false,
+    hasChangedDocs: false,
+    hasPackageManifest: manifests.length > 0,
+    manifests: [...manifests],
+    packageManager: detectPackageManager(repoPath),
+    hasTestScript: false,
+    hasTypecheckScript: false,
+    hasCiWorkflow: false
+  };
+  const packageJsonPath = (0, import_path3.join)(repoPath, "package.json");
+  if ((0, import_fs3.existsSync)(packageJsonPath)) {
+    try {
+      const metadata = (0, import_fs3.lstatSync)(packageJsonPath);
+      if (!metadata.isFile()) {
+        warnings.push("package.json is not a regular file and was not inspected");
+      } else if (metadata.size > MAX_PACKAGE_JSON_BYTES) {
+        warnings.push("package.json exceeds the 1 MiB inspection limit");
+      } else {
+        const packageJson = JSON.parse((0, import_fs3.readFileSync)(packageJsonPath, "utf8"));
+        evidence.hasTestScript = typeof packageJson.scripts?.test === "string";
+        evidence.hasTypecheckScript = typeof packageJson.scripts?.typecheck === "string";
+      }
+    } catch {
+      warnings.push("package.json is malformed or unreadable");
+    }
+  }
+  try {
+    const workflowPath = (0, import_path3.join)(repoPath, ".github", "workflows");
+    evidence.hasCiWorkflow = (0, import_fs3.existsSync)(workflowPath) && (0, import_fs3.lstatSync)(workflowPath).isDirectory() && (0, import_fs3.readdirSync)(workflowPath).some((file) => /\.ya?ml$/i.test(file));
+  } catch {
+    warnings.push("Could not inspect GitHub workflow filenames");
+  }
+  return evidence;
 }
 var KIND_ORDER = {
   "risk-area": 0,
@@ -21779,57 +21831,6 @@ function calculateRisk(reviewableFiles, reviewableLines, areas) {
   const score = Math.min(rawScore, 100);
   const level = score >= 50 ? "high" : score >= 20 ? "medium" : "low";
   return { score, level, reasons };
-}
-var MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
-var MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
-function detectPackageManager(repoPath) {
-  const candidates = [
-    ["pnpm-lock.yaml", "pnpm"],
-    ["yarn.lock", "yarn"],
-    ["package-lock.json", "npm"],
-    ["uv.lock", "uv"],
-    ["poetry.lock", "poetry"],
-    ["Cargo.lock", "cargo"],
-    ["go.mod", "go"]
-  ];
-  return candidates.find(([path]) => (0, import_fs2.existsSync)((0, import_path.join)(repoPath, path)))?.[1] ?? "unknown";
-}
-function collectRepositoryEvidence(repoPath, warnings) {
-  const manifests = MANIFESTS.filter((manifest) => (0, import_fs2.existsSync)((0, import_path.join)(repoPath, manifest)));
-  const evidence = {
-    hasChangedTests: false,
-    hasChangedDocs: false,
-    hasPackageManifest: manifests.length > 0,
-    manifests: [...manifests],
-    packageManager: detectPackageManager(repoPath),
-    hasTestScript: false,
-    hasTypecheckScript: false,
-    hasCiWorkflow: false
-  };
-  const packageJsonPath = (0, import_path.join)(repoPath, "package.json");
-  if ((0, import_fs2.existsSync)(packageJsonPath)) {
-    try {
-      const metadata = (0, import_fs2.lstatSync)(packageJsonPath);
-      if (!metadata.isFile()) {
-        warnings.push("package.json is not a regular file and was not inspected");
-      } else if (metadata.size > MAX_PACKAGE_JSON_BYTES) {
-        warnings.push("package.json exceeds the 1 MiB inspection limit");
-      } else {
-        const packageJson = JSON.parse((0, import_fs2.readFileSync)(packageJsonPath, "utf8"));
-        evidence.hasTestScript = typeof packageJson.scripts?.test === "string";
-        evidence.hasTypecheckScript = typeof packageJson.scripts?.typecheck === "string";
-      }
-    } catch {
-      warnings.push("package.json is malformed or unreadable");
-    }
-  }
-  try {
-    const workflowPath = (0, import_path.join)(repoPath, ".github", "workflows");
-    evidence.hasCiWorkflow = (0, import_fs2.existsSync)(workflowPath) && (0, import_fs2.lstatSync)(workflowPath).isDirectory() && (0, import_fs2.readdirSync)(workflowPath).some((file) => /\.ya?ml$/i.test(file));
-  } catch {
-    warnings.push("Could not inspect GitHub workflow filenames");
-  }
-  return evidence;
 }
 function buildAreas(areaFiles) {
   return RISK_AREAS.flatMap((definition) => {

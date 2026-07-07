@@ -1,12 +1,64 @@
 import { Command, CommanderError } from "commander";
 import { writeFileSync } from "node:fs";
-import { analyzePullRequest, loadAnalysisConfig, renderMarkdown, renderJson } from "@pr-nutrition/core";
+import {
+  analyzePullRequest,
+  loadAnalysisConfig,
+  renderDoctorJson,
+  renderDoctorText,
+  renderMarkdown,
+  renderJson,
+  runDoctor,
+} from "@pr-nutrition/core";
 import type { AnalysisConfig } from "@pr-nutrition/core";
 
 export type CliIO = {
   stdout: (text: string) => void;
   stderr: (text: string) => void;
 };
+
+async function runDoctorCli(argv: string[], io: CliIO): Promise<number> {
+  const program = new Command();
+
+  program
+    .name("pr-nutrition doctor")
+    .description("Diagnose whether PR Nutrition can run in this repository.")
+    .option("--repo <path>", "repository path", ".")
+    .option("--base <ref>", "base ref", "main")
+    .option("--head <ref>", "head ref", "HEAD")
+    .option("--json", "write JSON output")
+    .option("--config <path>", "config file path inside the repository (default: .pr-nutrition.json)")
+    .option("--no-config", "disable config file loading")
+    .allowExcessArguments(false)
+    .exitOverride()
+    .configureOutput({
+      writeOut: (str) => io.stdout(str),
+      writeErr: (str) => io.stderr(str),
+    });
+
+  try {
+    await program.parseAsync([argv[0] ?? "node", "pr-nutrition doctor", ...argv.slice(3)]);
+  } catch (err) {
+    if (err instanceof CommanderError) {
+      if (err.code === "commander.helpDisplayed") {
+        return 0;
+      }
+      return 1;
+    }
+    throw err;
+  }
+
+  const options = program.opts();
+  const result = runDoctor({
+    repoPath: options.repo,
+    baseRef: options.base,
+    headRef: options.head,
+    ...(typeof options.config === "string" ? { configFile: options.config } : {}),
+    useConfig: options.config !== false,
+  });
+
+  io.stdout(options.json === true ? renderDoctorJson(result) : renderDoctorText(result));
+  return result.status === "error" ? 2 : 0;
+}
 
 export async function runCli(
   argv: string[],
@@ -50,6 +102,7 @@ Examples:
   $ pr-nutrition --explain
   $ pr-nutrition --json --explain
   $ pr-nutrition --focus-files
+  $ pr-nutrition doctor
 `);
 
   const hasConfigOption = normalizedArgv.some(
@@ -59,6 +112,10 @@ Examples:
   if (hasConfigOption && hasNoConfigOption) {
     io.stderr("pr-nutrition: error: --config cannot be combined with --no-config.\nRun `pr-nutrition --help` for usage.\n");
     return 1;
+  }
+
+  if (normalizedArgv[2] === "doctor") {
+    return runDoctorCli(normalizedArgv, io);
   }
 
   try {
