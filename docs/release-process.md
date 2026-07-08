@@ -29,14 +29,14 @@ corepack pnpm release:check
 1. Merge the release-readiness PR.
 2. Sync local `main` to `origin/main`.
 3. Verify the full gate on the exact merge commit.
-4. Create an annotated SemVer tag that exactly matches the CLI package version, such as `v0.2.0`.
+4. Create an annotated SemVer tag that exactly matches the CLI package version, such as `v0.2.1`.
 5. Push the tag.
 6. The `Release` workflow runs on numeric `vX.Y.Z` tags with `contents: read` and `id-token: write`, then stages npm via OIDC with `npm stage publish --access public` from `packages/cli`.
 7. A maintainer inspects the staged package in npm.
 8. A maintainer approves publication with npm 2FA.
 9. Verify npm provenance and fresh install behavior for the published package.
-10. Create the GitHub release for the tag, such as `v0.2.0`.
-11. Do not publish Marketplace unless that has been intentionally decided and scoped.
+10. Create the GitHub release for the tag, such as `v0.2.1`.
+11. Publish or update the Marketplace release only after npm and GitHub release verification, if that has been intentionally decided and scoped.
 12. Do not create a floating `v0` tag yet.
 
 The workflow uses OIDC for npm provenance and does not require a long-lived npm publish token in repository secrets.

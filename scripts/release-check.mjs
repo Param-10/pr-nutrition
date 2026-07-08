@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { runPackageManager } from "./package-manager.mjs";
 
 const EXPECTED_NAME = "pr-nutrition";
-const EXPECTED_VERSION = "0.2.0";
+const EXPECTED_VERSION = "0.2.1";
 const EXPECTED_KEYWORDS = [
   "pull-request",
   "code-review",

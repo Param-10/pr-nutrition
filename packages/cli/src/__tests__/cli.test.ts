@@ -53,7 +53,7 @@ describe('pr-nutrition CLI runner', () => {
     const { io, getStdout } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', '--version'], io);
     expect(code).toBe(0);
-    expect(getStdout()).toContain('0.2.0');
+    expect(getStdout()).toContain('0.2.1');
   });
 
   it('returns 1 on invalid format', async () => {

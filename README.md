@@ -128,12 +128,13 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current stable npm release: `pr-nutrition@0.2.0`.
+Current stable npm release: `pr-nutrition@0.2.1`.
+Previous release: `pr-nutrition@0.2.0`.
 
 ```bash
-npx pr-nutrition@0.2.0
-npx pr-nutrition@0.2.0 --help
-npx pr-nutrition@0.2.0 doctor
+npx pr-nutrition@0.2.1
+npx pr-nutrition@0.2.1 --help
+npx pr-nutrition@0.2.1 doctor
 ```
 
 ---
@@ -185,11 +186,11 @@ Options:
 | `--explain`                 |    `false` | Add deterministic classification explanations |
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
 
-The `--json` shortcut is available in the current stable `0.2.0` release.
+The `--json` shortcut is available in the current stable `0.2.1` release.
 
 ### Configuration
 
-Configuration support is available in the current stable `0.2.0` release.
+Configuration support is available in the current stable `0.2.1` release.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -219,7 +220,7 @@ Rules:
 
 ### Explanation
 
-Explain output is available in the current stable `0.2.0` release.
+Explain output is available in the current stable `0.2.1` release.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -261,7 +262,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is available in the current stable `0.2.0` release.
+Focus file output is available in the current stable `0.2.1` release.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -275,7 +276,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is available in the current stable `0.2.0` release.
+Doctor output is available in the current stable `0.2.1` release.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -317,7 +318,7 @@ For agents and scripts:
 
 ## GitHub Action
 
-Current Action tag: `Param-10/pr-nutrition@v0.2.0`.
+Current Action tag: `Param-10/pr-nutrition@v0.2.1`.
 
 Use the released Action tag with a read-only token and full-history checkout:
 
@@ -331,7 +332,7 @@ steps:
       fetch-depth: 0
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@v0.2.0
+    uses: Param-10/pr-nutrition@v0.2.1
 ```
 
 The Action is read-only, requires only `contents: read`, does not call the GitHub API, and does not post PR comments.
