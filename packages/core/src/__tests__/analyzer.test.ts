@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { analyzePullRequest } from "../analyzer.js";
+import { getRiskArea, isDocFile, isTestFile } from "../classifier.js";
+import { buildFocusFileGroups } from "../focus.js";
 import { calculateRisk } from "../scorer.js";
 import type { AnalysisResult, AreaClassification, FocusFile, FocusFileGroupTitle, RiskAreaId } from "../types.js";
 
@@ -420,6 +422,94 @@ describe("core analyzer", () => {
     await expect(
       analyzePullRequest({ repoPath, baseRef: "main", headRef: "HEAD\nmain" }),
     ).rejects.toThrow(/Invalid head revision/);
+  });
+});
+
+describe("built-in risk classification precedence", () => {
+  it("does not classify documentation paths as production risk solely from risky words", () => {
+    expect(isDocFile("docs/api/reference.md")).toBe(true);
+    expect(isDocFile("docs/migrations/guide.md")).toBe(true);
+    expect(isDocFile("docs/configuration.md")).toBe(true);
+    expect(getRiskArea("docs/api/reference.md")).toBeUndefined();
+    expect(getRiskArea("docs/migrations/guide.md")).toBeUndefined();
+    expect(getRiskArea("docs/configuration.md")).toBeUndefined();
+  });
+
+  it("does not classify test fixture paths as production risk solely from risky words or JSON", () => {
+    expect(isTestFile("tests/fixtures/api-token.json")).toBe(true);
+    expect(getRiskArea("tests/fixtures/api-token.json")).toBeUndefined();
+  });
+
+  it("still classifies real production risky paths", () => {
+    expect(getRiskArea("api/openapi.yaml")).toBe("api");
+    expect(getRiskArea("migrations/001_create_users.sql")).toBe("migrations");
+    expect(getRiskArea("src/auth/session.ts")).toBe("authentication");
+    expect(getRiskArea(".github/workflows/ci.yml")).toBe("ci");
+    expect(getRiskArea("package.json")).toBe("dependencies");
+    expect(getRiskArea(".env.example")).toBe("configuration");
+    expect(getRiskArea("config/runtime.json")).toBe("configuration");
+  });
+
+  it("keeps docs, fixtures, and generated files out of review-first when names look risky", () => {
+    const groups = buildFocusFileGroups(
+      [
+        {
+          path: "docs/api/reference.md",
+          status: "modified",
+          additions: 1,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+        {
+          path: "tests/fixtures/api-token.json",
+          status: "modified",
+          additions: 1,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+        {
+          path: "src/generated/auth/session.ts",
+          status: "modified",
+          additions: 1,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: true,
+          isLowValue: true,
+        },
+        {
+          path: "src/api/routes.ts",
+          status: "modified",
+          additions: 1,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+      ],
+      [
+        { id: "authentication", label: "Authentication and security", files: ["src/generated/auth/session.ts"] },
+        { id: "api", label: "API and public contracts", files: ["src/api/routes.ts"] },
+      ],
+    );
+
+    expect(groups.find((group) => group.title === "review-first")?.files.map((file) => file.path)).toEqual([
+      "src/api/routes.ts",
+    ]);
+    expect(groups.find((group) => group.title === "review-normally")?.files.map((file) => file.path)).toEqual(
+      expect.arrayContaining(["docs/api/reference.md", "tests/fixtures/api-token.json"]),
+    );
+    expect(groups.find((group) => group.title === "skim")?.files).toEqual([
+      expect.objectContaining({
+        path: "src/generated/auth/session.ts",
+        reason: "generated",
+        generated: true,
+        lowReviewValue: true,
+      }),
+    ]);
   });
 });
 

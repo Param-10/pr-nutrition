@@ -2,6 +2,12 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Reduced noisy risk classifications for docs and test fixture paths containing risky-looking words.
+
 ## 0.2.0 - Unreleased
 
 ### Added

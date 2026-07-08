@@ -144,6 +144,8 @@ export function resolveRiskArea(
 }
 
 export function getRiskArea(path: string): RiskAreaId | undefined {
+  if (isDocFile(path) || isTestFile(path)) return undefined;
+
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
 

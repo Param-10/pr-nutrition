@@ -21118,6 +21118,7 @@ function resolveRiskArea(builtInArea, configArea) {
   return riskAreaPriority(configArea) < riskAreaPriority(builtInArea) ? configArea : builtInArea;
 }
 function getRiskArea(path) {
+  if (isDocFile(path) || isTestFile(path)) return void 0;
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
   if (/(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath)) return "migrations";
