@@ -1,0 +1,22 @@
+{
+  "name": "api-docs-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["api"],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["API contract", "production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedDocs": true
+  },
+  "expectedSummary": {
+    "filesChanged": 2,
+    "reviewableFiles": 2
+  },
+  "expectedFocusFiles": {
+    "review-first": [],
+    "review-normally": ["docs/api/examples.md", "docs/api/reference.md"]
+  }
+}

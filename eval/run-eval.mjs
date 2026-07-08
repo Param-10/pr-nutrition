@@ -28,6 +28,16 @@ const CASE_NAMES = [
   "custom-generated",
   "custom-auth-path",
   "custom-docs-path",
+  "author-component-false-positive",
+  "design-token-false-positive",
+  "api-docs-false-positive",
+  "migration-docs-false-positive",
+  "config-docs-false-positive",
+  "generated-auth-client-false-positive",
+  "risky-word-fixtures-false-positive",
+  "github-issue-template-false-positive",
+  "package-docs-false-positive",
+  "release-notes-false-positive",
 ];
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..");
@@ -210,6 +220,20 @@ function assertExpected(caseName, result, expected) {
     }
   }
 
+  for (const [title, expectedPaths] of Object.entries(expected.expectedFocusFiles ?? {})) {
+    const actualGroup = result.focusFiles?.find((group) => group.title === title);
+    if (actualGroup === undefined) {
+      failures.push(`focusFiles.${title}: expected focus group to be present`);
+      continue;
+    }
+    assertListEqual(
+      failures,
+      `focusFiles.${title}`,
+      actualGroup.files.map((file) => file.path),
+      expectedPaths,
+    );
+  }
+
   return failures;
 }
 
@@ -245,6 +269,7 @@ try {
       headRef: "HEAD",
       ...(config === undefined ? {} : { config }),
       ...(evalCase.expected.expectedExplanations === undefined ? {} : { explain: true }),
+      ...(evalCase.expected.expectedFocusFiles === undefined ? {} : { focusFiles: true }),
     });
     const failures = assertExpected(evalCase.name, analysis, evalCase.expected);
     results.push({

@@ -1,0 +1,26 @@
+{
+  "name": "risky-word-fixtures-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["authentication", "api", "migrations", "configuration"],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["authentication", "API contract", "migration", "configuration", "production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedTests": true
+  },
+  "expectedSummary": {
+    "filesChanged": 3,
+    "reviewableFiles": 3
+  },
+  "expectedFocusFiles": {
+    "review-first": [],
+    "review-normally": [
+      "tests/fixtures/api-token.json",
+      "tests/fixtures/auth-response.json",
+      "tests/fixtures/migration-plan.json"
+    ]
+  }
+}

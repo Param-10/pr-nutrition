@@ -1,0 +1,22 @@
+{
+  "name": "release-notes-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["dependencies", "configuration"],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["dependency", "configuration", "environment", "production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedDocs": true
+  },
+  "expectedSummary": {
+    "filesChanged": 2,
+    "reviewableFiles": 2
+  },
+  "expectedFocusFiles": {
+    "review-first": [],
+    "review-normally": ["CHANGELOG.md", "docs/release-process.md"]
+  }
+}

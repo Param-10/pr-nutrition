@@ -1,0 +1,22 @@
+{
+  "name": "config-docs-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["configuration"],
+  "expectedLowReviewValue": [],
+  "mustNotIncludeFocus": ["configuration", "environment", "production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedEvidence": {
+    "hasChangedDocs": true
+  },
+  "expectedSummary": {
+    "filesChanged": 2,
+    "reviewableFiles": 2
+  },
+  "expectedFocusFiles": {
+    "review-first": [],
+    "review-normally": ["docs/config-examples.md", "docs/configuration.md"]
+  }
+}

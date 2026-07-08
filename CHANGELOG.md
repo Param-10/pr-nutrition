@@ -4,6 +4,10 @@ All notable changes to PR Nutrition are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Expanded the false-positive evaluation corpus for risky-looking docs, fixtures, generated files, and benign path names.
+
 ### Fixed
 
 - Reduced noisy risk classifications for docs and test fixture paths containing risky-looking words.

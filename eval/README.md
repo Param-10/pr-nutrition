@@ -41,3 +41,16 @@ Expected files assert on structured JSON fields instead of full Markdown snapsho
 - `rename-only`: pure renames should preserve rename metadata without inflating line counts.
 - `binary-only`: binary assets should be handled safely and treated as low-review-value.
 - `monorepo-package`: nested package manifests should classify as dependency changes, not generic configuration. The current baseline also records API area for `packages/api/package.json`; keep that visible until classifier priority is refined.
+- `custom-generated`: configured generated paths should stay low-review-value.
+- `custom-auth-path`: configured auth paths should surface authentication risk.
+- `custom-docs-path`: configured documentation paths should count as docs without production-change guidance.
+- `author-component-false-positive`: author-related source paths should not become authentication risk.
+- `design-token-false-positive`: design token paths should not become authentication risk.
+- `api-docs-false-positive`: API documentation should stay docs, not API contract risk.
+- `migration-docs-false-positive`: migration documentation should stay docs, not database migration risk.
+- `config-docs-false-positive`: configuration documentation should stay docs, not configuration risk.
+- `generated-auth-client-false-positive`: generated auth/API-looking clients should stay skim/generated.
+- `risky-word-fixtures-false-positive`: test fixtures with auth/API/migration/config names should stay test-like.
+- `github-issue-template-false-positive`: issue templates should not become CI/workflow risk.
+- `package-docs-false-positive`: package-manager docs should not become dependency risk.
+- `release-notes-false-positive`: changelog and release docs should stay documentation-only.

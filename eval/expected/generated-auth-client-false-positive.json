@@ -1,0 +1,20 @@
+{
+  "name": "generated-auth-client-false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeAreas": ["authentication", "api"],
+  "expectedLowReviewValue": ["src/generated/auth-client.ts", "src/generated/session-api.ts"],
+  "mustNotIncludeFocus": ["authentication", "API contract", "production changes without changed tests"],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 2,
+    "reviewableFiles": 0,
+    "reviewableLines": 0
+  },
+  "expectedFocusFiles": {
+    "review-first": [],
+    "skim": ["src/generated/auth-client.ts", "src/generated/session-api.ts"]
+  }
+}
