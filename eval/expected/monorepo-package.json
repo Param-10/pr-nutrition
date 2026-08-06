@@ -1,8 +1,8 @@
 {
   "name": "monorepo-package",
-  "expectedRiskLevel": "medium",
-  "minScore": 15,
-  "maxScore": 30,
+  "expectedRiskLevel": "low",
+  "minScore": 10,
+  "maxScore": 10,
   "expectedAreas": ["api", "dependencies"],
   "mustNotIncludeAreas": ["configuration"],
   "expectedLowReviewValue": [],

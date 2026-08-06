@@ -35,6 +35,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   const evidence = collectRepositoryEvidence(resolvedRepoPath, warnings);
   const configMatcher = createConfigMatcher(options.config);
   const areaFiles = new Map<RiskAreaId, string[]>();
+  const areaLines = new Map<RiskAreaId, number>();
   const lowReviewValueFiles: ChangedFile[] = [];
   let additions = 0;
   let deletions = 0;
@@ -81,13 +82,15 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
       const paths = areaFiles.get(riskArea) ?? [];
       paths.push(file.path);
       areaFiles.set(riskArea, paths);
+      const changedLines = isLowValue ? 0 : file.additions + file.deletions;
+      areaLines.set(riskArea, (areaLines.get(riskArea) ?? 0) + changedLines);
     }
 
     return file;
   });
 
   const areas = buildAreas(areaFiles);
-  const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
+  const risk = calculateRisk(reviewableFiles, reviewableLines, areas, areaLines);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
 
   return {

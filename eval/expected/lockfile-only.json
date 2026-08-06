@@ -1,8 +1,8 @@
 {
   "name": "lockfile-only",
   "expectedRiskLevel": "low",
-  "minScore": 15,
-  "maxScore": 15,
+  "minScore": 5,
+  "maxScore": 5,
   "expectedAreas": ["dependencies"],
   "mustNotIncludeAreas": ["configuration"],
   "expectedLowReviewValue": ["pnpm-lock.yaml"],

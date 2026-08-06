@@ -82,24 +82,24 @@
     }
   ],
   "risk": {
-    "score": 75,
-    "level": "high",
+    "score": 43,
+    "level": "medium",
     "reasons": [
       {
         "description": "Touched authentication and security",
         "points": 25
       },
       {
-        "description": "Touched ci and workflows",
-        "points": 20
+        "description": "Touched ci and workflows in 1 file, 1 reviewable line",
+        "points": 8
       },
       {
-        "description": "Touched api and public contracts",
-        "points": 15
+        "description": "Touched api and public contracts in 1 file, 2 reviewable lines",
+        "points": 5
       },
       {
-        "description": "Touched dependencies",
-        "points": 15
+        "description": "Touched dependencies in 1 file, 0 reviewable lines",
+        "points": 5
       }
     ]
   },

@@ -103,6 +103,14 @@ export interface RiskAreaDefinition {
   id: RiskAreaId;
   label: string;
   points: number;
+  /**
+   * Reduced tiers for areas where the amount changed is a reasonable proxy for
+   * review effort. Areas without tiers are scored on presence alone, because
+   * there the existence of the change is the signal rather than its size: a
+   * one-line migration can drop a table, and a two-line auth change can invert
+   * a permission check.
+   */
+  magnitudePoints?: { light: number; moderate: number };
   focus: string;
 }
 
@@ -123,24 +131,28 @@ export const RISK_AREAS: readonly RiskAreaDefinition[] = [
     id: "ci",
     label: "CI and workflows",
     points: 20,
+    magnitudePoints: { light: 8, moderate: 14 },
     focus: "Review workflow permissions, triggers, and use of untrusted inputs.",
   },
   {
     id: "api",
     label: "API and public contracts",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review backward compatibility of public API or contract changes.",
   },
   {
     id: "dependencies",
     label: "Dependencies",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review dependency provenance, lockfile changes, and install scripts.",
   },
   {
     id: "configuration",
     label: "Configuration and environment",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review configuration defaults and environment-specific behavior.",
   },
 ];
