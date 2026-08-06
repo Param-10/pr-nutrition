@@ -1,6 +1,6 @@
 # PR Nutrition
 
-**Risk:** High (75/100)
+**Risk:** Medium (43/100)
 
 ## Scope
 
@@ -27,9 +27,9 @@
 ## Risk reasons
 
 - Touched authentication and security (+25)
-- Touched ci and workflows (+20)
-- Touched api and public contracts (+15)
-- Touched dependencies (+15)
+- Touched ci and workflows in 1 file, 1 reviewable line (+8)
+- Touched api and public contracts in 1 file, 2 reviewable lines (+5)
+- Touched dependencies in 1 file, 0 reviewable lines (+5)
 
 ## Repository evidence
 

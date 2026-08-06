@@ -14,6 +14,8 @@ All notable changes to PR Nutrition are documented in this file.
 
 ### Changed
 
+- Risk scoring now scales CI, API, dependency, and configuration points with how much changed in that area, so a one-line lockfile bump no longer scores the same as a dependency overhaul. Migrations and authentication remain presence-based, because any change in those areas warrants review regardless of size.
+- Risk reasons for scaled areas now report the file and line counts behind the score.
 - Expanded the false-positive evaluation corpus from 13 to 23 cases.
 - Corrected the `github-issue-template-false-positive` eval expectation, which asserted the false positive it was meant to prevent.
 

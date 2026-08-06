@@ -43,6 +43,16 @@ function areas(...ids: RiskAreaId[]): AreaClassification[] {
   return ids.map((id) => ({ id, label: id, files: [`${id}.txt`] }));
 }
 
+function areaWithFiles(id: RiskAreaId, fileCount: number): AreaClassification[] {
+  return [
+    { id, label: id, files: Array.from({ length: fileCount }, (_, index) => `${id}-${index}.txt`) },
+  ];
+}
+
+function areaLines(entries: Partial<Record<RiskAreaId, number>>): Map<RiskAreaId, number> {
+  return new Map(Object.entries(entries) as [RiskAreaId, number][]);
+}
+
 function focusGroup(result: AnalysisResult, title: FocusFileGroupTitle): FocusFile[] {
   return result.focusFiles?.find((group) => group.title === title)?.files ?? [];
 }
@@ -77,8 +87,10 @@ describe("core analyzer", () => {
       "api/projects.ts",
       "api/users.ts",
     ]);
-    expect(result.risk).toMatchObject({ score: 40, level: "medium" });
-    expect(result.risk.reasons.filter((reason) => reason.points === 15)).toHaveLength(1);
+    expect(result.risk).toMatchObject({ score: 35, level: "medium" });
+    expect(
+      result.risk.reasons.filter((reason) => reason.description.includes("api and public contracts")),
+    ).toHaveLength(1);
     expect(result.evidence.hasChangedTests).toBe(true);
     expect(result.reviewFocus).toHaveLength(2);
     expect(result.focusFiles).toBeUndefined();
@@ -302,7 +314,7 @@ describe("core analyzer", () => {
     const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "feature" });
     expect(result.summary.reviewableFiles).toBe(1);
     expect(result.summary.reviewableLines).toBe(1);
-    expect(result.risk.score).toBe(15);
+    expect(result.risk.score).toBe(5);
     expect(result.lowReviewValueFiles.map((file) => file.path)).toEqual([
       "dist/bundle.js",
       "packages/app/pnpm-lock.yaml",
@@ -402,7 +414,7 @@ describe("core analyzer", () => {
 
     const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "feature" });
     expect(result.areas).toHaveLength(6);
-    expect(result.risk.score).toBe(100);
+    expect(result.risk.score).toBe(78);
     expect(result.risk.level).toBe("high");
     expect(result.reviewFocus).toHaveLength(5);
     expect(result.reviewFocus[0]).toMatch(/migration/i);
@@ -558,9 +570,15 @@ describe("built-in risk classification precedence", () => {
 
 describe("risk scoring boundaries", () => {
   it("uses low 0-19, medium 20-49, and high 50-100", () => {
-    expect(calculateRisk(0, 0, areas("api"))).toMatchObject({ score: 15, level: "low" });
-    expect(calculateRisk(0, 0, areas("ci"))).toMatchObject({ score: 20, level: "medium" });
-    expect(calculateRisk(0, 0, areas("migrations", "ci"))).toMatchObject({
+    expect(calculateRisk(0, 0, areas("api"), areaLines({ api: 200 }))).toMatchObject({
+      score: 15,
+      level: "low",
+    });
+    expect(calculateRisk(0, 0, areas("ci"), areaLines({ ci: 200 }))).toMatchObject({
+      score: 20,
+      level: "medium",
+    });
+    expect(calculateRisk(0, 0, areas("migrations", "ci"), areaLines({ ci: 200 }))).toMatchObject({
       score: 50,
       level: "high",
     });
@@ -569,8 +587,53 @@ describe("risk scoring boundaries", () => {
         30,
         800,
         areas("migrations", "authentication", "ci", "api", "dependencies", "configuration"),
+        areaLines({ ci: 200, api: 200, dependencies: 200, configuration: 200 }),
       ),
     ).toMatchObject({ score: 100, level: "high" });
+  });
+
+  it("scores migrations and authentication on presence, not on size", () => {
+    expect(calculateRisk(0, 0, areas("migrations"), areaLines({ migrations: 1 }))).toMatchObject({
+      score: 30,
+    });
+    expect(calculateRisk(0, 0, areas("migrations"), areaLines({ migrations: 500 }))).toMatchObject({
+      score: 30,
+    });
+    expect(
+      calculateRisk(0, 0, areas("authentication"), areaLines({ authentication: 1 })),
+    ).toMatchObject({ score: 25 });
+  });
+
+  it("scales the remaining areas with how much changed in them", () => {
+    expect(calculateRisk(0, 0, areas("dependencies"), areaLines({ dependencies: 0 }))).toMatchObject(
+      { score: 5 },
+    );
+    expect(
+      calculateRisk(0, 0, areas("dependencies"), areaLines({ dependencies: 30 })),
+    ).toMatchObject({ score: 10 });
+    expect(
+      calculateRisk(0, 0, areas("dependencies"), areaLines({ dependencies: 200 })),
+    ).toMatchObject({ score: 15 });
+  });
+
+  it("uses the area file count as well as its line count to pick a band", () => {
+    expect(calculateRisk(0, 0, areaWithFiles("configuration", 1), areaLines({}))).toMatchObject({
+      score: 5,
+    });
+    expect(calculateRisk(0, 0, areaWithFiles("configuration", 2), areaLines({}))).toMatchObject({
+      score: 10,
+    });
+    expect(calculateRisk(0, 0, areaWithFiles("configuration", 4), areaLines({}))).toMatchObject({
+      score: 15,
+    });
+  });
+
+  it("reports the change volume behind a scaled area but not a presence area", () => {
+    const scaled = calculateRisk(0, 0, areas("dependencies"), areaLines({ dependencies: 2 }));
+    expect(scaled.reasons[0]?.description).toBe("Touched dependencies in 1 file, 2 reviewable lines");
+
+    const presence = calculateRisk(0, 0, areas("migrations"), areaLines({ migrations: 2 }));
+    expect(presence.reasons[0]?.description).toBe("Touched database migrations");
   });
 
   it("applies exactly one size band", () => {
