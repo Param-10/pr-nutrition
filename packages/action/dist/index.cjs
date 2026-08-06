@@ -21042,6 +21042,68 @@ var LOW_VALUE_FILE_NAMES = /* @__PURE__ */ new Set([
   "uv.lock",
   "yarn.lock"
 ]);
+var AUTH_DIRECTORY_NAMES = /* @__PURE__ */ new Set([
+  "auth",
+  "authentication",
+  "authorization",
+  "iam",
+  "login",
+  "permissions",
+  "rbac",
+  "security",
+  "session",
+  "sessions"
+]);
+var AUTH_FILE_STEMS = /* @__PURE__ */ new Set([
+  "auth",
+  "authentication",
+  "authorization",
+  "jwt",
+  "login",
+  "logout",
+  "mfa",
+  "oauth",
+  "password",
+  "permission",
+  "permissions",
+  "role",
+  "roles",
+  "session",
+  "sessions",
+  "sso"
+]);
+var API_CONTRACT_DIRECTORY_NAMES = /* @__PURE__ */ new Set(["api"]);
+var CONFIGURATION_DIRECTORY_NAMES = /* @__PURE__ */ new Set([
+  ".config",
+  "config",
+  "deploy",
+  "helm",
+  "infra",
+  "k8s",
+  "kubernetes",
+  "terraform"
+]);
+var CONFIGURATION_FILE_NAMES = /* @__PURE__ */ new Set([
+  ".node-version",
+  ".npmrc",
+  ".nvmrc",
+  "compose.yaml",
+  "compose.yml",
+  "docker-compose.yaml",
+  "docker-compose.yml",
+  "dockerfile",
+  "fly.toml",
+  "jsconfig.json",
+  "makefile",
+  "netlify.toml",
+  "nginx.conf",
+  "procfile",
+  "serverless.yaml",
+  "serverless.yml",
+  "vercel.json",
+  "wrangler.toml"
+]);
+var NON_RISK_DIRECTORY_PREFIXES = [".github/issue_template/", ".github/pull_request_template/"];
 var RISK_AREAS = [
   {
     id: "migrations",
@@ -21117,24 +21179,42 @@ function resolveRiskArea(builtInArea, configArea) {
   if (configArea === void 0) return builtInArea;
   return riskAreaPriority(configArea) < riskAreaPriority(builtInArea) ? configArea : builtInArea;
 }
+function directoryNames(lowerPath) {
+  return lowerPath.split("/").slice(0, -1).filter((segment) => segment.length > 0);
+}
+function fileStem(name) {
+  const dotIndex = name.lastIndexOf(".");
+  return dotIndex <= 0 ? name : name.slice(0, dotIndex);
+}
+function hasDirectory(lowerPath, names) {
+  return directoryNames(lowerPath).some((segment) => names.has(segment));
+}
+function isApiContractFile(name) {
+  return /^(openapi|asyncapi|swagger)([.-]|$)/.test(name) || /\.(proto|graphql|gql)$/.test(name);
+}
+function isConfigurationFile(lowerPath, name) {
+  return /(^|\/)\.env(\.|$)/.test(lowerPath) || name.endsWith(".env") || CONFIGURATION_FILE_NAMES.has(name) || /^dockerfile\./.test(name) || /^tsconfig(\.|$)/.test(name) || /\.config\./.test(name) || /\.(tf|tfvars)$/.test(name);
+}
 function getRiskArea(path) {
   if (isDocFile(path) || isTestFile(path)) return void 0;
   const lowerPath = path.toLowerCase();
+  if (NON_RISK_DIRECTORY_PREFIXES.some((prefix) => lowerPath.startsWith(prefix))) return void 0;
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
+  const stem = fileStem(name);
   if (/(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath)) return "migrations";
-  if (/(^|\/)(auth|security)(\/|$)/.test(lowerPath) || /(login|permissions|roles)/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, AUTH_DIRECTORY_NAMES) || AUTH_FILE_STEMS.has(stem)) {
     return "authentication";
   }
   if (/(^|\/)(\.github\/workflows|\.circleci)(\/|$)/.test(lowerPath) || /(^|\/)\.gitlab-ci\.yml$/.test(lowerPath)) {
     return "ci";
   }
-  if (/(^|\/)(api|types|interfaces)(\/|$)/.test(lowerPath) || /(openapi\.ya?ml|swagger)/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
     return "api";
   }
   if (DEPENDENCY_FILE_NAMES.has(name)) {
     return "dependencies";
   }
-  if (/\.env(\.|$)/.test(lowerPath) || /(^|\/)config(\/|$)/.test(lowerPath) || /\.config\./.test(lowerPath) || /\.(json|ya?ml)$/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, CONFIGURATION_DIRECTORY_NAMES) || isConfigurationFile(lowerPath, name)) {
     return "configuration";
   }
   return void 0;

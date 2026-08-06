@@ -450,6 +450,49 @@ describe("built-in risk classification precedence", () => {
     expect(getRiskArea("config/runtime.json")).toBe("configuration");
   });
 
+  it("does not treat every JSON or YAML file as configuration", () => {
+    expect(getRiskArea("src/locales/en.json")).toBeUndefined();
+    expect(getRiskArea("src/data/countries.json")).toBeUndefined();
+    expect(getRiskArea("eval/expected/api-docs-false-positive.json")).toBeUndefined();
+    expect(getRiskArea("app/i18n/translations.yaml")).toBeUndefined();
+    expect(getRiskArea(".github/ISSUE_TEMPLATE/bug_report.yml")).toBeUndefined();
+    expect(getRiskArea(".github/ISSUE_TEMPLATE/config.yml")).toBeUndefined();
+  });
+
+  it("classifies real configuration and infrastructure files", () => {
+    expect(getRiskArea("tsconfig.json")).toBe("configuration");
+    expect(getRiskArea("tsconfig.build.json")).toBe("configuration");
+    expect(getRiskArea("Dockerfile")).toBe("configuration");
+    expect(getRiskArea("Dockerfile.production")).toBe("configuration");
+    expect(getRiskArea("docker-compose.yml")).toBe("configuration");
+    expect(getRiskArea("vite.config.ts")).toBe("configuration");
+    expect(getRiskArea("infra/main.tf")).toBe("configuration");
+    expect(getRiskArea("terraform/network.tfvars")).toBe("configuration");
+    expect(getRiskArea("k8s/deployment.yaml")).toBe("configuration");
+  });
+
+  it("requires an auth path segment or filename rather than a risky substring", () => {
+    expect(getRiskArea("src/components/LoginButton.tsx")).toBeUndefined();
+    expect(getRiskArea("src/components/UserRolesTable.tsx")).toBeUndefined();
+    expect(getRiskArea("src/hooks/usePermissionsBanner.ts")).toBeUndefined();
+    expect(getRiskArea("src/generated/auth-client.ts")).toBeUndefined();
+
+    expect(getRiskArea("src/pages/login/index.tsx")).toBe("authentication");
+    expect(getRiskArea("app/login.ts")).toBe("authentication");
+    expect(getRiskArea("modules/identity/session.rb")).toBe("authentication");
+    expect(getRiskArea("src/permissions/rbac.go")).toBe("authentication");
+  });
+
+  it("limits API risk to contract artifacts instead of internal type directories", () => {
+    expect(getRiskArea("src/types/index.ts")).toBeUndefined();
+    expect(getRiskArea("src/interfaces/user.ts")).toBeUndefined();
+
+    expect(getRiskArea("api/users.ts")).toBe("api");
+    expect(getRiskArea("proto/billing.proto")).toBe("api");
+    expect(getRiskArea("schema/public.graphql")).toBe("api");
+    expect(getRiskArea("openapi.yaml")).toBe("api");
+  });
+
   it("keeps docs, fixtures, and generated files out of review-first when names look risky", () => {
     const groups = buildFocusFileGroups(
       [

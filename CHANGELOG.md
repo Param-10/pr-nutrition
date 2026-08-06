@@ -7,10 +7,15 @@ All notable changes to PR Nutrition are documented in this file.
 ### Fixed
 
 - Reduced noisy risk classifications for docs and test fixture paths containing risky-looking words such as `api`, `migration`, `config`, and `token`.
+- Stopped treating every `.json`, `.yml`, and `.yaml` file as configuration risk. Locale files, static data, and test fixtures are no longer scored, and configuration risk now requires a known configuration or infrastructure path.
+- Authentication risk now requires an auth path segment or an auth filename, so ordinary files such as `LoginButton.tsx` and `UserRolesTable.tsx` are no longer scored as authentication changes.
+- API contract risk no longer fires on internal `types/` and `interfaces/` directories, and instead recognizes contract artifacts such as OpenAPI, AsyncAPI, Protobuf, and GraphQL schema files.
+- GitHub issue and pull-request templates are no longer classified as risky configuration.
 
 ### Changed
 
 - Expanded the false-positive evaluation corpus from 13 to 23 cases.
+- Corrected the `github-issue-template-false-positive` eval expectation, which asserted the false positive it was meant to prevent.
 
 ## 0.2.0 - 2026-07-07
 

@@ -422,7 +422,7 @@ describe("analysis with config", () => {
   });
 
   it("keeps identical behavior when config is omitted", async () => {
-    const repoPath = createChangedRepository(["modules/identity/session.rb"]);
+    const repoPath = createChangedRepository(["modules/identity/tenant-lookup.rb"]);
     const withoutConfig = await analyzePullRequest({ repoPath, baseRef: "HEAD~1", headRef: "HEAD" });
 
     expect(withoutConfig.areas).toEqual([]);

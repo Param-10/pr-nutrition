@@ -175,28 +175,14 @@
       "files": [
         "packages/cli/package.json"
       ]
-    },
-    {
-      "id": "configuration",
-      "label": "Configuration and environment",
-      "files": [
-        ".github/ISSUE_TEMPLATE/bug_report.yml",
-        ".github/ISSUE_TEMPLATE/false_positive.yml",
-        ".github/ISSUE_TEMPLATE/feature_request.yml",
-        "examples/demo-pr/pr-nutrition.json"
-      ]
     }
   ],
   "risk": {
-    "score": 40,
+    "score": 25,
     "level": "medium",
     "reasons": [
       {
         "description": "Touched dependencies",
-        "points": 15
-      },
-      {
-        "description": "Touched configuration and environment",
         "points": 15
       },
       {
@@ -219,8 +205,7 @@
   },
   "lowReviewValueFiles": [],
   "reviewFocus": [
-    "Review dependency provenance, lockfile changes, and install scripts.",
-    "Review configuration defaults and environment-specific behavior."
+    "Review dependency provenance, lockfile changes, and install scripts."
   ],
   "warnings": []
 }

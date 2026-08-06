@@ -1,6 +1,6 @@
 # PR Nutrition
 
-**Risk:** Medium (40/100)
+**Risk:** Medium (25/100)
 
 ## Scope
 
@@ -12,17 +12,14 @@
 ## Changed areas
 
 - Dependencies: 1 file
-- Configuration and environment: 4 files
 
 ## Review focus
 
 - Review dependency provenance, lockfile changes, and install scripts.
-- Review configuration defaults and environment-specific behavior.
 
 ## Risk reasons
 
 - Touched dependencies (+15)
-- Touched configuration and environment (+15)
 - Size: at least 10 files or 200 lines (+10)
 
 ## Repository evidence
