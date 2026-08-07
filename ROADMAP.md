@@ -22,12 +22,21 @@ PR Nutrition's center of gravity is a local-first PR triage CLI. CI and GitHub A
 - [x] focused file review groups with `--focus-files`
 - [x] local setup diagnostics with `doctor`
 
+## v0.2.1 - precision
+- [x] scoped risk-area rules to path segments and known configuration, infrastructure, and contract paths
+- [x] removed blanket `.json`/`.yml`/`.yaml` configuration matching
+- [x] scaled CI, API, dependency, and configuration points with change magnitude
+- [x] kept migrations and authentication presence-based
+- [x] corrected an eval expectation that asserted the false positive it was meant to prevent
+
 ## v0.3
+- rank and cap the review-first list so the top of the report stays short
+- false-positive benchmark reporting a precision number, with real-world repository shapes
 - local workflow support that prints or saves reports without blocking by default
 - `--fail-on` for teams that explicitly opt into CI enforcement
 - richer deterministic framework and infrastructure rules
 - additional generated-file ecosystems
-- false-positive benchmark and issue template
+- issue template for reporting a misclassification
 
 ## Later
 - optional LLM wording polish
