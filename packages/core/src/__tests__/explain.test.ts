@@ -158,7 +158,7 @@ describe("config explanations", () => {
         "snapshots/output.golden",
         "handbook/intro.adoc",
         "spec/login.rb",
-        "modules/identity/session.rb",
+        "modules/identity/tenant-lookup.rb",
       ],
       FULL_CONFIG,
     );
@@ -192,7 +192,7 @@ describe("config explanations", () => {
   });
 
   it("explains config risk paths with source config", () => {
-    expect(find(explanations, "modules/identity/session.rb", "risk-area")).toMatchObject({
+    expect(find(explanations, "modules/identity/tenant-lookup.rb", "risk-area")).toMatchObject({
       area: "authentication",
       ruleId: "config.paths.risk.authentication",
       source: "config",

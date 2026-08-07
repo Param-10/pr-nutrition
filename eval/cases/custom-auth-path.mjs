@@ -9,10 +9,10 @@ export default {
         2,
       )}\n`,
     );
-    repo.write("modules/identity/session.rb", "class Session\nend\n");
+    repo.write("modules/identity/tenant-lookup.rb", "class TenantLookup\nend\n");
     repo.commit("base");
 
-    repo.write("modules/identity/session.rb", "class Session\n  def rotate; end\nend\n");
-    repo.commit("rotate identity sessions");
+    repo.write("modules/identity/tenant-lookup.rb", "class TenantLookup\n  def rotate; end\nend\n");
+    repo.commit("rotate identity tenant lookups");
   },
 };

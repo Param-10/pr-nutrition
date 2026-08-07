@@ -27,6 +27,78 @@ const LOW_VALUE_FILE_NAMES = new Set([
   "yarn.lock",
 ]);
 
+const AUTH_DIRECTORY_NAMES = new Set([
+  "auth",
+  "authentication",
+  "authorization",
+  "iam",
+  "login",
+  "permissions",
+  "rbac",
+  "security",
+  "session",
+  "sessions",
+]);
+
+// Matched against the whole filename stem, never a substring, so that
+// LoginButton.tsx stays a component while login.ts stays auth logic.
+const AUTH_FILE_STEMS = new Set([
+  "auth",
+  "authentication",
+  "authorization",
+  "jwt",
+  "login",
+  "logout",
+  "mfa",
+  "oauth",
+  "password",
+  "permission",
+  "permissions",
+  "role",
+  "roles",
+  "session",
+  "sessions",
+  "sso",
+]);
+
+const API_CONTRACT_DIRECTORY_NAMES = new Set(["api"]);
+
+const CONFIGURATION_DIRECTORY_NAMES = new Set([
+  ".config",
+  "config",
+  "deploy",
+  "helm",
+  "infra",
+  "k8s",
+  "kubernetes",
+  "terraform",
+]);
+
+const CONFIGURATION_FILE_NAMES = new Set([
+  ".node-version",
+  ".npmrc",
+  ".nvmrc",
+  "compose.yaml",
+  "compose.yml",
+  "docker-compose.yaml",
+  "docker-compose.yml",
+  "dockerfile",
+  "fly.toml",
+  "jsconfig.json",
+  "makefile",
+  "netlify.toml",
+  "nginx.conf",
+  "procfile",
+  "serverless.yaml",
+  "serverless.yml",
+  "vercel.json",
+  "wrangler.toml",
+]);
+
+// Repository metadata that reviewers do not need triaged as production risk,
+// even though the filenames look like configuration.
+const NON_RISK_DIRECTORY_PREFIXES = [".github/issue_template/", ".github/pull_request_template/"];
+
 export interface RiskAreaDefinition {
   id: RiskAreaId;
   label: string;
@@ -143,26 +215,58 @@ export function resolveRiskArea(
   return riskAreaPriority(configArea) < riskAreaPriority(builtInArea) ? configArea : builtInArea;
 }
 
+function directoryNames(lowerPath: string): string[] {
+  return lowerPath.split("/").slice(0, -1).filter((segment) => segment.length > 0);
+}
+
+function fileStem(name: string): string {
+  const dotIndex = name.lastIndexOf(".");
+  return dotIndex <= 0 ? name : name.slice(0, dotIndex);
+}
+
+function hasDirectory(lowerPath: string, names: ReadonlySet<string>): boolean {
+  return directoryNames(lowerPath).some((segment) => names.has(segment));
+}
+
+function isApiContractFile(name: string): boolean {
+  return /^(openapi|asyncapi|swagger)([.-]|$)/.test(name) || /\.(proto|graphql|gql)$/.test(name);
+}
+
+function isConfigurationFile(lowerPath: string, name: string): boolean {
+  return (
+    /(^|\/)\.env(\.|$)/.test(lowerPath) ||
+    name.endsWith(".env") ||
+    CONFIGURATION_FILE_NAMES.has(name) ||
+    /^dockerfile\./.test(name) ||
+    /^tsconfig(\.|$)/.test(name) ||
+    /\.config\./.test(name) ||
+    /\.(tf|tfvars)$/.test(name)
+  );
+}
+
 export function getRiskArea(path: string): RiskAreaId | undefined {
   if (isDocFile(path) || isTestFile(path)) return undefined;
 
   const lowerPath = path.toLowerCase();
+  if (NON_RISK_DIRECTORY_PREFIXES.some((prefix) => lowerPath.startsWith(prefix))) return undefined;
+
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
+  const stem = fileStem(name);
 
   if (/(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath)) return "migrations";
-  if (/(^|\/)(auth|security)(\/|$)/.test(lowerPath) || /(login|permissions|roles)/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, AUTH_DIRECTORY_NAMES) || AUTH_FILE_STEMS.has(stem)) {
     return "authentication";
   }
   if (/(^|\/)(\.github\/workflows|\.circleci)(\/|$)/.test(lowerPath) || /(^|\/)\.gitlab-ci\.yml$/.test(lowerPath)) {
     return "ci";
   }
-  if (/(^|\/)(api|types|interfaces)(\/|$)/.test(lowerPath) || /(openapi\.ya?ml|swagger)/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
     return "api";
   }
   if (DEPENDENCY_FILE_NAMES.has(name)) {
     return "dependencies";
   }
-  if (/\.env(\.|$)/.test(lowerPath) || /(^|\/)config(\/|$)/.test(lowerPath) || /\.config\./.test(lowerPath) || /\.(json|ya?ml)$/.test(lowerPath)) {
+  if (hasDirectory(lowerPath, CONFIGURATION_DIRECTORY_NAMES) || isConfigurationFile(lowerPath, name)) {
     return "configuration";
   }
 

@@ -24,6 +24,17 @@ Git metadata
 
 The core invokes Git directly, without a shell, and requests metadata only. Strict config validation, deterministic path classification, and doctor diagnostics stay local. GitHub API access, AST parsing, hosted services, and LLM services are outside the current trusted core boundary.
 
+## Path Classification Precision
+
+Risk-area rules only have file paths to work with, so they must prefer precision over recall. A rule that fires on an ordinary file costs more trust than a rule that misses an unusual one, and teams can always add their own paths through `.pr-nutrition.json`.
+
+Two constraints follow from that:
+
+- Match whole path segments or whole filename stems, never substrings. `LoginButton.tsx` is a component; `login.ts` is authentication logic.
+- Never classify by generic file extension. Most `.json` and `.yaml` files in a repository are fixtures, locales, or static data rather than configuration.
+
+Every risk-area rule needs an eval case for the paths it should match and the near-miss paths it must not. Expectations belong in `eval/expected` and should be written from intent, not copied from current output, so the corpus measures correctness rather than pinning today's behavior.
+
 ## GitHub Action Boundary
 
 `packages/action` owns only runner-specific behavior:

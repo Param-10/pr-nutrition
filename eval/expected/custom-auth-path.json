@@ -13,7 +13,7 @@
   },
   "expectedExplanations": [
     {
-      "path": "modules/identity/session.rb",
+      "path": "modules/identity/tenant-lookup.rb",
       "kind": "risk-area",
       "area": "authentication",
       "ruleId": "config.paths.risk.authentication",
