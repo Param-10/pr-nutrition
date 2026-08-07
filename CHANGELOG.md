@@ -2,7 +2,7 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
-## 0.2.1 - Unreleased
+## 0.2.1 - 2026-08-06
 
 ### Fixed
 
@@ -18,6 +18,7 @@ All notable changes to PR Nutrition are documented in this file.
 - Risk reasons for scaled areas now report the file and line counts behind the score.
 - Expanded the false-positive evaluation corpus from 13 to 23 cases.
 - Corrected the `github-issue-template-false-positive` eval expectation, which asserted the false positive it was meant to prevent.
+- Raised the Vitest timeout so the Git-backed test suite no longer fails intermittently against the 5s default.
 
 ## 0.2.0 - 2026-07-07
 

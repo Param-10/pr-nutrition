@@ -108,6 +108,10 @@ Medium: 20–49
 High:   50–100
 ```
 
+An area contributes points once, no matter how many files matched it. CI, API, dependency, and configuration points scale with how much changed in that area, so a one-line lockfile bump does not score like a dependency overhaul. Migrations and authentication always score their full value, because a single line in either can drop a table or invert a permission check.
+
+Scaling uses reviewable lines, so generated files and lockfiles do not inflate an area regardless of how large their diff looks.
+
 Tests and docs affect the review guidance, but they do not reduce the risk score. A risky change is still risky even if tests were added.
 
 ---
@@ -454,9 +458,12 @@ Current:
 * strict JSON configuration
 * `--json`, `--explain`, `--focus-files`, and `doctor`
 * false-positive evaluation corpus
+* segment-anchored risk rules and magnitude-scaled scoring
 
 Next:
 
+* ranked and capped review-first list
+* false-positive benchmark with a reported precision number
 * richer deterministic framework and infrastructure rules
 * optional local workflow helpers
 * opt-in CI enforcement controls only after they are clearly scoped
