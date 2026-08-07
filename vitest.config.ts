@@ -12,5 +12,10 @@ export default defineConfig({
       reportsDirectory: "coverage",
     },
     include: ["packages/**/*.test.ts", "scripts/**/*.test.ts"],
+    // Most tests build real Git repositories in a temporary directory, so they
+    // spawn many Git subprocesses. The 5s default is not enough headroom on a
+    // loaded machine and made the doctor tests fail intermittently.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 });
