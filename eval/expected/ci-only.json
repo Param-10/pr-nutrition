@@ -1,8 +1,8 @@
 {
   "name": "ci-only",
-  "expectedRiskLevel": "medium",
-  "minScore": 20,
-  "maxScore": 20,
+  "expectedRiskLevel": "low",
+  "minScore": 8,
+  "maxScore": 8,
   "expectedAreas": ["ci"],
   "mustNotIncludeAreas": ["configuration"],
   "expectedLowReviewValue": [],

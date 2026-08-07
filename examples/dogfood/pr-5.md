@@ -1,6 +1,6 @@
 # PR Nutrition
 
-**Risk:** Medium (25/100)
+**Risk:** Low (15/100)
 
 ## Scope
 
@@ -19,7 +19,7 @@
 
 ## Risk reasons
 
-- Touched dependencies (+15)
+- Touched dependencies in 1 file, 3 reviewable lines (+5)
 - Size: at least 10 files or 200 lines (+10)
 
 ## Repository evidence

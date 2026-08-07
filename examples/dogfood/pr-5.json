@@ -178,12 +178,12 @@
     }
   ],
   "risk": {
-    "score": 25,
-    "level": "medium",
+    "score": 15,
+    "level": "low",
     "reasons": [
       {
-        "description": "Touched dependencies",
-        "points": 15
+        "description": "Touched dependencies in 1 file, 3 reviewable lines",
+        "points": 5
       },
       {
         "description": "Size: at least 10 files or 200 lines",

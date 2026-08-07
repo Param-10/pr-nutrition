@@ -21121,24 +21121,28 @@ var RISK_AREAS = [
     id: "ci",
     label: "CI and workflows",
     points: 20,
+    magnitudePoints: { light: 8, moderate: 14 },
     focus: "Review workflow permissions, triggers, and use of untrusted inputs."
   },
   {
     id: "api",
     label: "API and public contracts",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review backward compatibility of public API or contract changes."
   },
   {
     id: "dependencies",
     label: "Dependencies",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review dependency provenance, lockfile changes, and install scripts."
   },
   {
     id: "configuration",
     label: "Configuration and environment",
     points: 15,
+    magnitudePoints: { light: 5, moderate: 10 },
     focus: "Review configuration defaults and environment-specific behavior."
   }
 ];
@@ -21893,14 +21897,36 @@ function parseCheckAttr(output) {
   }
   return result;
 }
-function calculateRisk(reviewableFiles, reviewableLines, areas) {
+var LIGHT_MAX_LINES = 10;
+var MODERATE_MAX_FILES = 3;
+var MODERATE_MAX_LINES = 60;
+function magnitudeBand(magnitude) {
+  if (magnitude.files > MODERATE_MAX_FILES || magnitude.lines > MODERATE_MAX_LINES) return "full";
+  if (magnitude.files > 1 || magnitude.lines > LIGHT_MAX_LINES) return "moderate";
+  return "light";
+}
+function countLabel(count, noun) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+function areaPoints(definition, band) {
+  if (definition.magnitudePoints === void 0 || band === "full") return definition.points;
+  return definition.magnitudePoints[band];
+}
+function areaReason(definition, magnitude, points) {
+  const scope = definition.magnitudePoints === void 0 ? "" : ` in ${countLabel(magnitude.files, "file")}, ${countLabel(magnitude.lines, "reviewable line")}`;
+  return { description: `Touched ${definition.label.toLowerCase()}${scope}`, points };
+}
+function calculateRisk(reviewableFiles, reviewableLines, areas, areaLines = /* @__PURE__ */ new Map()) {
   let rawScore = 0;
   const reasons = [];
-  const activeAreas = new Set(areas.map((area) => area.id));
+  const areaFileCounts = new Map(areas.map((area) => [area.id, area.files.length]));
   for (const definition of RISK_AREAS) {
-    if (!activeAreas.has(definition.id)) continue;
-    rawScore += definition.points;
-    reasons.push({ description: `Touched ${definition.label.toLowerCase()}`, points: definition.points });
+    const files = areaFileCounts.get(definition.id);
+    if (files === void 0) continue;
+    const magnitude = { files, lines: areaLines.get(definition.id) ?? 0 };
+    const points = areaPoints(definition, magnitudeBand(magnitude));
+    rawScore += points;
+    reasons.push(areaReason(definition, magnitude, points));
   }
   if (reviewableFiles >= 30 || reviewableLines >= 800) {
     rawScore += 20;
@@ -21936,6 +21962,7 @@ async function analyzePullRequest(options) {
   const evidence = collectRepositoryEvidence(resolvedRepoPath, warnings);
   const configMatcher = createConfigMatcher(options.config);
   const areaFiles = /* @__PURE__ */ new Map();
+  const areaLines = /* @__PURE__ */ new Map();
   const lowReviewValueFiles = [];
   let additions = 0;
   let deletions = 0;
@@ -21969,11 +21996,13 @@ async function analyzePullRequest(options) {
       const paths = areaFiles.get(riskArea) ?? [];
       paths.push(file.path);
       areaFiles.set(riskArea, paths);
+      const changedLines = isLowValue ? 0 : file.additions + file.deletions;
+      areaLines.set(riskArea, (areaLines.get(riskArea) ?? 0) + changedLines);
     }
     return file;
   });
   const areas = buildAreas(areaFiles);
-  const risk = calculateRisk(reviewableFiles, reviewableLines, areas);
+  const risk = calculateRisk(reviewableFiles, reviewableLines, areas, areaLines);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
   return {
     schemaVersion: 1,
