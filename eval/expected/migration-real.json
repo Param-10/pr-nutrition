@@ -1,11 +1,16 @@
 {
   "name": "migration-real",
+  "intent": "true-positive",
   "expectedRiskLevel": "medium",
   "minScore": 30,
   "maxScore": 30,
-  "expectedAreas": ["migrations"],
+  "expectedAreas": [
+    "migrations"
+  ],
   "expectedLowReviewValue": [],
-  "mustIncludeFocus": ["migration"],
+  "mustIncludeFocus": [
+    "migration"
+  ],
   "expectedWarnings": [],
   "expectedExplanations": [
     {

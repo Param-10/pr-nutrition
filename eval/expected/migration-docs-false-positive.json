@@ -1,12 +1,18 @@
 {
   "name": "migration-docs-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["migrations"],
+  "mustNotIncludeAreas": [
+    "migrations"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["migration", "production changes without changed tests"],
+  "mustNotIncludeFocus": [
+    "migration",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true
@@ -17,6 +23,9 @@
   },
   "expectedFocusFiles": {
     "review-first": [],
-    "review-normally": ["docs/database-migrations.md", "docs/migrations/guide.md"]
+    "review-normally": [
+      "docs/database-migrations.md",
+      "docs/migrations/guide.md"
+    ]
   }
 }

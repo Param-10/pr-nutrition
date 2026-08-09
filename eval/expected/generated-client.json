@@ -1,11 +1,18 @@
 {
   "name": "generated-client",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "expectedLowReviewValue": ["src/generated/client.ts"],
-  "mustNotIncludeFocus": ["authentication", "dependency", "production changes without changed tests"],
+  "expectedLowReviewValue": [
+    "src/generated/client.ts"
+  ],
+  "mustNotIncludeFocus": [
+    "authentication",
+    "dependency",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 1,

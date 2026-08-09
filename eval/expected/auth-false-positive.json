@@ -1,12 +1,19 @@
 {
   "name": "auth-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["authentication"],
+  "mustNotIncludeAreas": [
+    "authentication"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["authentication", "authorization", "session"],
+  "mustNotIncludeFocus": [
+    "authentication",
+    "authorization",
+    "session"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true,

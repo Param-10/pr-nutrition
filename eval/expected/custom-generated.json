@@ -1,11 +1,16 @@
 {
   "name": "custom-generated",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "expectedLowReviewValue": ["sdk/client.ts"],
-  "mustNotIncludeFocus": ["production changes detected without changed tests"],
+  "expectedLowReviewValue": [
+    "sdk/client.ts"
+  ],
+  "mustNotIncludeFocus": [
+    "production changes detected without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 1,

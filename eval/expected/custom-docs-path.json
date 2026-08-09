@@ -1,11 +1,14 @@
 {
   "name": "custom-docs-path",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["production changes detected without changed tests"],
+  "mustNotIncludeFocus": [
+    "production changes detected without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true,

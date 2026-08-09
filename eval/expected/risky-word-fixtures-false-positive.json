@@ -1,12 +1,24 @@
 {
   "name": "risky-word-fixtures-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["authentication", "api", "migrations", "configuration"],
+  "mustNotIncludeAreas": [
+    "authentication",
+    "api",
+    "migrations",
+    "configuration"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["authentication", "API contract", "migration", "configuration", "production changes without changed tests"],
+  "mustNotIncludeFocus": [
+    "authentication",
+    "API contract",
+    "migration",
+    "configuration",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedTests": true

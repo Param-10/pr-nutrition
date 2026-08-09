@@ -1,12 +1,19 @@
 {
   "name": "design-token-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["authentication"],
+  "mustNotIncludeAreas": [
+    "authentication"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["authentication", "authorization", "session"],
+  "mustNotIncludeFocus": [
+    "authentication",
+    "authorization",
+    "session"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 2,
@@ -14,6 +21,9 @@
   },
   "expectedFocusFiles": {
     "review-first": [],
-    "review-normally": ["src/styles/design-tokens.ts", "src/theme/tokens.ts"]
+    "review-normally": [
+      "src/styles/design-tokens.ts",
+      "src/theme/tokens.ts"
+    ]
   }
 }

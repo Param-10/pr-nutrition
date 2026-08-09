@@ -79,6 +79,8 @@ It gives reviewers a small “nutrition label” for the PR so they can quickly 
 
 The goal is not to replace review. The goal is to make review less exhausting.
 
+The built-in eval corpus currently reports **100% false-positive avoidance** (`16/16` guard cases) alongside true-positive coverage for real risk signals. Run `pnpm eval` to regenerate that precision summary locally. See [eval/README.md](eval/README.md).
+
 ---
 
 ## What it checks
@@ -457,16 +459,15 @@ Current:
 * committed reproducible Action bundle
 * strict JSON configuration
 * `--json`, `--explain`, `--focus-files`, and `doctor`
-* false-positive evaluation corpus
+* false-positive evaluation corpus with a reported precision summary
 * segment-anchored risk rules and magnitude-scaled scoring
+* ranked and capped focus-file lists in Markdown
 
 Next:
 
-* ranked and capped review-first list
-* false-positive benchmark with a reported precision number
 * richer deterministic framework and infrastructure rules
-* optional local workflow helpers
-* opt-in CI enforcement controls only after they are clearly scoped
+* coverage section for what was and was not checked
+* optional local workflow helpers (`check`, `--fail-on`)
 
 Later:
 

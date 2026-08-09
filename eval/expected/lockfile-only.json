@@ -1,13 +1,24 @@
 {
   "name": "lockfile-only",
+  "intent": "true-positive",
   "expectedRiskLevel": "low",
   "minScore": 5,
   "maxScore": 5,
-  "expectedAreas": ["dependencies"],
-  "mustNotIncludeAreas": ["configuration"],
-  "expectedLowReviewValue": ["pnpm-lock.yaml"],
-  "mustIncludeFocus": ["dependency"],
-  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "expectedAreas": [
+    "dependencies"
+  ],
+  "mustNotIncludeAreas": [
+    "configuration"
+  ],
+  "expectedLowReviewValue": [
+    "pnpm-lock.yaml"
+  ],
+  "mustIncludeFocus": [
+    "dependency"
+  ],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasPackageManifest": true,

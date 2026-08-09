@@ -1,5 +1,6 @@
 {
   "name": "rename-only",
+  "intent": "shape",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,

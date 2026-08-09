@@ -124,6 +124,8 @@ function createRepository(caseName) {
   };
 }
 
+const VALID_INTENTS = new Set(["false-positive", "true-positive", "shape"]);
+
 function assertExpected(caseName, result, expected) {
   const failures = [];
   const areaIds = result.areas.map((area) => area.id);
@@ -131,6 +133,12 @@ function assertExpected(caseName, result, expected) {
 
   if (expected.name !== caseName) {
     failures.push(`name: expected ${caseName}, got ${expected.name}`);
+  }
+
+  if (!VALID_INTENTS.has(expected.intent)) {
+    failures.push(
+      `intent: expected one of ${formatList([...VALID_INTENTS])}, got ${JSON.stringify(expected.intent)}`,
+    );
   }
 
   if (expected.expectedRiskLevel !== undefined) {
@@ -275,6 +283,7 @@ try {
     results.push({
       analysis,
       failures,
+      intent: evalCase.expected.intent,
       name: evalCase.name,
     });
   }
@@ -292,6 +301,25 @@ try {
     );
   }
 
+  function rateLabel(passed, total) {
+    if (total === 0) return `0/0 (n/a)`;
+    const percent = ((passed / total) * 100).toFixed(1).replace(/\.0$/, "");
+    return `${passed}/${total} (${percent}%)`;
+  }
+
+  const falsePositiveCases = results.filter((result) => result.intent === "false-positive");
+  const truePositiveCases = results.filter((result) => result.intent === "true-positive");
+  const falsePositivePassed = falsePositiveCases.filter((result) => result.failures.length === 0).length;
+  const truePositivePassed = truePositiveCases.filter((result) => result.failures.length === 0).length;
+
+  process.stdout.write("\nPrecision\n");
+  process.stdout.write(
+    `False-positive avoidance: ${rateLabel(falsePositivePassed, falsePositiveCases.length)}\n`,
+  );
+  process.stdout.write(
+    `True-positive pass rate:  ${rateLabel(truePositivePassed, truePositiveCases.length)}\n`,
+  );
+
   const failed = results.filter((result) => result.failures.length > 0);
   if (failed.length > 0) {
     process.stdout.write("\nFailures\n");
@@ -303,7 +331,7 @@ try {
     }
     process.exitCode = 1;
   } else {
-    process.stdout.write(`\n${results.length} eval cases passed.\n`);
+    process.stdout.write(`\nOverall: ${results.length} eval cases passed.\n`);
   }
 
   if (keepTemporaryRepos) {
