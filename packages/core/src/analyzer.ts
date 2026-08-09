@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { getRiskArea, isDocFile, isGeneratedFile, isLowValueFile, isTestFile, isTestRelevantFile, resolveRiskArea, RISK_AREAS } from "./classifier.js";
 import { createConfigMatcher } from "./config.js";
+import { buildCoverage } from "./coverage.js";
 import { collectRepositoryEvidence } from "./evidence.js";
 import { buildExplanations } from "./explain.js";
 import { buildFocusFileGroups } from "./focus.js";
@@ -112,6 +113,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
     areas,
     risk,
     evidence,
+    coverage: buildCoverage({ focusFiles: options.focusFiles === true }),
     lowReviewValueFiles,
     reviewFocus,
     ...(options.focusFiles === true ? { focusFiles: buildFocusFileGroups(files, areas) } : {}),

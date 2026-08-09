@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
+import { buildCoverage } from '../coverage.js';
 import { renderMarkdown, renderJson } from '../render.js';
 import type { AnalysisResult } from '../types.js';
 
@@ -9,6 +10,8 @@ const fixturesDir = join(__dirname, '__fixtures__');
 function readFixture(name: string): string {
   return readFileSync(join(fixturesDir, name), 'utf8');
 }
+
+const defaultCoverage = buildCoverage();
 
 const fullResult: AnalysisResult = {
   schemaVersion: 1,
@@ -47,6 +50,7 @@ const fullResult: AnalysisResult = {
     hasTypecheckScript: true,
     hasCiWorkflow: true
   },
+  coverage: defaultCoverage,
   lowReviewValueFiles: [
     { path: 'pnpm-lock.yaml', status: 'modified', additions: 50, deletions: 10, isBinary: false, isGenerated: false, isLowValue: true },
     { path: 'docs/generated.md', status: 'modified', additions: 0, deletions: 0, isBinary: false, isGenerated: true, isLowValue: true },
@@ -95,6 +99,7 @@ const minimalResult: AnalysisResult = {
     hasTypecheckScript: false,
     hasCiWorkflow: false
   },
+  coverage: defaultCoverage,
   lowReviewValueFiles: [],
   reviewFocus: [],
   warnings: [],
@@ -155,6 +160,22 @@ describe('Renderers', () => {
   it('matches minimal golden fixtures', () => {
     expect(renderMarkdown(minimalResult)).toBe(readFixture('minimal.md'));
     expect(renderJson(minimalResult)).toBe(readFixture('minimal.json'));
+  });
+
+  it('always includes a Coverage section with checked and not-checked lists', () => {
+    const md = renderMarkdown(minimalResult);
+    expect(md).toContain('## Coverage');
+    expect(md).toContain('### Checked');
+    expect(md).toContain('### Not checked');
+    expect(md).toContain('Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration');
+    expect(md).toContain('Diff line contents and semantic correctness');
+    expect(md).not.toContain('Focus-file ranking');
+
+    const withFocus = renderMarkdown(
+      { ...minimalResult, coverage: buildCoverage({ focusFiles: true }) },
+      { focusFiles: true },
+    );
+    expect(withFocus).toContain('Focus-file ranking into review-first, review-normally, and skim groups');
   });
 
   it('output ends with exactly one newline', () => {
@@ -386,6 +407,7 @@ describe('Renderers', () => {
       'areas',
       'risk',
       'evidence',
+      'coverage',
       'lowReviewValueFiles',
       'reviewFocus',
       'warnings'

@@ -101,6 +101,7 @@ It detects:
 * renamed and binary files
 * changed tests and docs
 * repository evidence like package manager, test scripts, typecheck scripts, and CI workflow presence
+* an explicit Coverage section for what was checked and what was not
 
 Risk scores are deterministic and capped at `100`.
 

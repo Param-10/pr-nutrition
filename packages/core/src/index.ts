@@ -9,10 +9,12 @@ export type { ConfigMatcher, ConfigRiskMatch, LoadAnalysisConfigOptions } from "
 export { renderMarkdown, renderJson } from "./render.js";
 export type { RenderOptions } from "./render.js";
 export { buildFocusFileGroups } from "./focus.js";
+export { buildCoverage } from "./coverage.js";
 export { renderDoctorJson, renderDoctorText, runDoctor } from "./doctor.js";
 export type {
   AnalysisConfig,
   AnalysisConfigPaths,
+  AnalysisCoverage,
   AnalysisExplanation,
   AnalysisResult,
   AnalyzeOptions,

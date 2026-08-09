@@ -34,6 +34,22 @@
 - Changed tests: Yes
 - Changed docs: No
 
+## Coverage
+
+### Checked
+
+- Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration
+- Generated, low-review-value, test, and docs path heuristics
+- Repository evidence: manifests, package manager, scripts, and CI workflow presence
+- Git change metadata: paths, rename/copy status, and line counts (not patch contents)
+
+### Not checked
+
+- Diff line contents and semantic correctness
+- Vulnerability databases or dependency audit results
+- Test execution or CI job outcomes
+- LLM review or automated bug finding
+
 ## Low review-value files
 
 <details>

@@ -21433,6 +21433,28 @@ function createConfigMatcher(config) {
     matchRiskArea
   };
 }
+var ALWAYS_CHECKED = [
+  "Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration",
+  "Generated, low-review-value, test, and docs path heuristics",
+  "Repository evidence: manifests, package manager, scripts, and CI workflow presence",
+  "Git change metadata: paths, rename/copy status, and line counts (not patch contents)"
+];
+var ALWAYS_NOT_CHECKED = [
+  "Diff line contents and semantic correctness",
+  "Vulnerability databases or dependency audit results",
+  "Test execution or CI job outcomes",
+  "LLM review or automated bug finding"
+];
+function buildCoverage(options = {}) {
+  const checked = [...ALWAYS_CHECKED];
+  if (options.focusFiles === true) {
+    checked.push("Focus-file ranking into review-first, review-normally, and skim groups");
+  }
+  return {
+    checked,
+    notChecked: [...ALWAYS_NOT_CHECKED]
+  };
+}
 var MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
 var WORKSPACE_ROOTS = ["packages", "apps", "libs", "services"];
 var MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
@@ -22086,6 +22108,7 @@ async function analyzePullRequest(options) {
     areas,
     risk,
     evidence,
+    coverage: buildCoverage({ focusFiles: options.focusFiles === true }),
     lowReviewValueFiles,
     reviewFocus,
     ...options.focusFiles === true ? { focusFiles: buildFocusFileGroups(files, areas) } : {},
@@ -22166,6 +22189,7 @@ function renderJson(result, options = {}) {
       reasons: result.risk.reasons
     },
     evidence: result.evidence,
+    coverage: result.coverage,
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
     ...options.focusFiles && result.focusFiles !== void 0 ? { focusFiles: result.focusFiles } : {},
@@ -22268,6 +22292,18 @@ function renderMarkdown(result, options = {}) {
     `- Changed docs: ${boolText(result.evidence.hasChangedDocs)}`
   ];
   parts.push(evidenceLines.join("\n"));
+  const coverageLines = [
+    "## Coverage",
+    "",
+    "### Checked",
+    "",
+    ...result.coverage.checked.map((item) => `- ${item}`),
+    "",
+    "### Not checked",
+    "",
+    ...result.coverage.notChecked.map((item) => `- ${item}`)
+  ];
+  parts.push(coverageLines.join("\n"));
   if (result.lowReviewValueFiles.length > 0) {
     const count = result.lowReviewValueFiles.length;
     const lrvfLines = [
