@@ -1,11 +1,10 @@
 {
-  "name": "monorepo-package",
+  "name": "python-requirements",
   "intent": "true-positive",
   "expectedRiskLevel": "low",
-  "minScore": 10,
-  "maxScore": 10,
+  "minScore": 5,
+  "maxScore": 5,
   "expectedAreas": [
-    "api",
     "dependencies"
   ],
   "mustNotIncludeAreas": [
@@ -19,15 +18,8 @@
     "production changes without changed tests"
   ],
   "expectedWarnings": [],
-  "expectedEvidence": {
-    "hasPackageManifest": true,
-    "manifests": [
-      "packages/api/package.json",
-      "packages/web/package.json"
-    ],
-    "packageManager": "unknown"
-  },
   "expectedSummary": {
-    "filesChanged": 2
+    "filesChanged": 1,
+    "reviewableFiles": 1
   }
 }

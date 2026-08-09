@@ -37,7 +37,7 @@ Every risk-area rule needs an eval case for the paths it should match and the ne
 
 ## Risk Scoring
 
-An area contributes points once, no matter how many files matched it. Most areas scale those points across three bands, so a trivial touch and a substantial rewrite are not equivalent:
+An area contributes points once, no matter how many files matched it. Most scaled areas use three bands, so a trivial touch and a substantial rewrite are not equivalent:
 
 - `light`: one file and at most 10 reviewable lines
 - `moderate`: up to 3 files and up to 60 reviewable lines
@@ -45,7 +45,7 @@ An area contributes points once, no matter how many files matched it. Most areas
 
 Bands use reviewable lines, so generated files and lockfiles contribute zero regardless of their diff size.
 
-Migrations and authentication opt out of banding and always score full points. There the existence of the change is the signal rather than its size: a one-line migration can drop a table, and a two-line auth change can invert a permission check. An area opts into banding by declaring `magnitudePoints` in `RISK_AREAS`.
+Migrations, authentication, and CI opt out of banding and always score full points. There the existence of the change is the signal rather than its size: a one-line migration can drop a table, a two-line auth change can invert a permission check, and a one-line workflow edit can weaken a required gate. An area opts into banding by declaring `magnitudePoints` in `RISK_AREAS`.
 
 ## GitHub Action Boundary
 

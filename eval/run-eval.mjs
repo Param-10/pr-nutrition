@@ -38,6 +38,7 @@ const CASE_NAMES = [
   "github-issue-template-false-positive",
   "package-docs-false-positive",
   "release-notes-false-positive",
+  "python-requirements",
 ];
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..");

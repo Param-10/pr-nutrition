@@ -21018,17 +21018,27 @@ var import_fs3 = require("fs");
 var import_path3 = require("path");
 var import_child_process = require("child_process");
 var DEPENDENCY_FILE_NAMES = /* @__PURE__ */ new Set([
+  "build.gradle",
+  "build.gradle.kts",
   "bun.lock",
   "bun.lockb",
   "cargo.lock",
   "cargo.toml",
+  "composer.json",
+  "composer.lock",
+  "gemfile",
+  "gemfile.lock",
   "go.mod",
   "go.sum",
   "package-lock.json",
   "package.json",
+  "pipfile",
+  "pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
+  "pom.xml",
   "pyproject.toml",
+  "requirements.txt",
   "uv.lock",
   "yarn.lock"
 ]);
@@ -21036,7 +21046,10 @@ var LOW_VALUE_FILE_NAMES = /* @__PURE__ */ new Set([
   "bun.lock",
   "bun.lockb",
   "cargo.lock",
+  "composer.lock",
+  "gemfile.lock",
   "package-lock.json",
+  "pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
   "uv.lock",
@@ -21121,7 +21134,6 @@ var RISK_AREAS = [
     id: "ci",
     label: "CI and workflows",
     points: 20,
-    magnitudePoints: { light: 8, moderate: 14 },
     focus: "Review workflow permissions, triggers, and use of untrusted inputs."
   },
   {
@@ -21153,6 +21165,8 @@ function isTestFile(path) {
 }
 function isDocFile(path) {
   const lowerPath = path.toLowerCase();
+  const name = lowerPath.split("/").at(-1) ?? lowerPath;
+  if (DEPENDENCY_FILE_NAMES.has(name)) return false;
   return /(^|\/)docs?(\/|$)/.test(lowerPath) || /(^|\/)(readme|changelog|contributing)(\.[^/]*)?$/.test(lowerPath) || /\.(md|mdx|rst|txt)$/.test(lowerPath);
 }
 function isGeneratedFile(path) {
@@ -21420,21 +21434,66 @@ function createConfigMatcher(config) {
   };
 }
 var MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
+var WORKSPACE_ROOTS = ["packages", "apps", "libs", "services"];
 var MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
+var PACKAGE_MANAGER_CANDIDATES = [
+  ["pnpm-lock.yaml", "pnpm"],
+  ["yarn.lock", "yarn"],
+  ["package-lock.json", "npm"],
+  ["uv.lock", "uv"],
+  ["poetry.lock", "poetry"],
+  ["Cargo.lock", "cargo"],
+  ["go.mod", "go"]
+];
+function listWorkspacePackageDirs(repoPath) {
+  const packageDirs = [];
+  for (const root of WORKSPACE_ROOTS) {
+    const rootPath = (0, import_path3.join)(repoPath, root);
+    if (!(0, import_fs3.existsSync)(rootPath)) continue;
+    try {
+      if (!(0, import_fs3.lstatSync)(rootPath).isDirectory()) continue;
+      for (const entry of (0, import_fs3.readdirSync)(rootPath, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          packageDirs.push((0, import_path3.join)(root, entry.name));
+        }
+      }
+    } catch {
+    }
+  }
+  return packageDirs.sort();
+}
+function collectManifestPaths(repoPath) {
+  const manifests = [];
+  for (const manifest of MANIFESTS) {
+    if ((0, import_fs3.existsSync)((0, import_path3.join)(repoPath, manifest))) {
+      manifests.push(manifest);
+    }
+  }
+  for (const packageDir of listWorkspacePackageDirs(repoPath)) {
+    for (const manifest of MANIFESTS) {
+      const relativePath = `${packageDir}/${manifest}`;
+      if ((0, import_fs3.existsSync)((0, import_path3.join)(repoPath, relativePath))) {
+        manifests.push(relativePath);
+      }
+    }
+  }
+  return manifests;
+}
+function detectPackageManagerAt(repoPath, relativeDir = "") {
+  const base = relativeDir.length === 0 ? repoPath : (0, import_path3.join)(repoPath, relativeDir);
+  return PACKAGE_MANAGER_CANDIDATES.find(([path]) => (0, import_fs3.existsSync)((0, import_path3.join)(base, path)))?.[1];
+}
 function detectPackageManager(repoPath) {
-  const candidates = [
-    ["pnpm-lock.yaml", "pnpm"],
-    ["yarn.lock", "yarn"],
-    ["package-lock.json", "npm"],
-    ["uv.lock", "uv"],
-    ["poetry.lock", "poetry"],
-    ["Cargo.lock", "cargo"],
-    ["go.mod", "go"]
-  ];
-  return candidates.find(([path]) => (0, import_fs3.existsSync)((0, import_path3.join)(repoPath, path)))?.[1] ?? "unknown";
+  const rootManager = detectPackageManagerAt(repoPath);
+  if (rootManager !== void 0) return rootManager;
+  for (const packageDir of listWorkspacePackageDirs(repoPath)) {
+    const nestedManager = detectPackageManagerAt(repoPath, packageDir);
+    if (nestedManager !== void 0) return nestedManager;
+  }
+  return "unknown";
 }
 function collectRepositoryEvidence(repoPath, warnings) {
-  const manifests = MANIFESTS.filter((manifest) => (0, import_fs3.existsSync)((0, import_path3.join)(repoPath, manifest)));
+  const manifests = collectManifestPaths(repoPath);
   const evidence = {
     hasChangedTests: false,
     hasChangedDocs: false,
@@ -21675,7 +21734,10 @@ var LOCKFILE_NAMES = /* @__PURE__ */ new Set([
   "bun.lock",
   "bun.lockb",
   "cargo.lock",
+  "composer.lock",
+  "gemfile.lock",
   "package-lock.json",
+  "pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
   "uv.lock",

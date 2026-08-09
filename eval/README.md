@@ -51,10 +51,11 @@ Missing or invalid `intent` values fail the harness.
 - `auth-real`: real auth/session changes should surface authentication risk and focus.
 - `auth-false-positive`: auth-looking prose/test paths should not become authentication risk.
 - `migration-real`: migration files should surface migration risk and focus.
-- `ci-only`: workflow changes should classify as CI, not generic configuration.
+- `ci-only`: workflow changes should classify as CI at full presence points, not generic configuration.
 - `rename-only`: pure renames should preserve rename metadata without inflating line counts.
 - `binary-only`: binary assets should be handled safely and treated as low-review-value.
-- `monorepo-package`: nested package manifests should classify as dependency changes, not generic configuration. The current baseline also records API area for `packages/api/package.json`; keep that visible until classifier priority is refined.
+- `monorepo-package`: nested package manifests should classify as dependency changes, not generic configuration, and should count toward repository evidence. The current baseline also records API area for `packages/api/package.json`; keep that visible until classifier priority is refined.
+- `python-requirements`: Python `requirements.txt` changes should surface dependency risk.
 - `custom-generated`: configured generated paths should stay low-review-value.
 - `custom-auth-path`: configured auth paths should surface authentication risk.
 - `custom-docs-path`: configured documentation paths should count as docs without production-change guidance.
