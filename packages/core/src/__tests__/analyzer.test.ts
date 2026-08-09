@@ -566,6 +566,24 @@ describe("built-in risk classification precedence", () => {
       }),
     ]);
   });
+
+  it("sorts review-normally by reviewable lines without quadratic path lookups", () => {
+    const files = Array.from({ length: 40 }, (_, index) => ({
+      path: `src/lib/module-${String(index).padStart(2, "0")}.ts`,
+      status: "modified" as const,
+      additions: index,
+      deletions: 0,
+      isBinary: false,
+      isGenerated: false,
+      isLowValue: false,
+    }));
+
+    const groups = buildFocusFileGroups(files, []);
+    const normally = groups.find((group) => group.title === "review-normally")?.files.map((file) => file.path);
+    expect(normally?.[0]).toBe("src/lib/module-39.ts");
+    expect(normally?.[1]).toBe("src/lib/module-38.ts");
+    expect(normally?.at(-1)).toBe("src/lib/module-00.ts");
+  });
 });
 
 describe("risk scoring boundaries", () => {

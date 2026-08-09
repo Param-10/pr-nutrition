@@ -4,6 +4,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const cliPackageVersion = (createRequire(import.meta.url)('../../package.json') as { version: string }).version;
 
 function git(repoPath: string, args: string[]): string {
   return execFileSync("git", args, {
@@ -53,7 +56,7 @@ describe('pr-nutrition CLI runner', () => {
     const { io, getStdout } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', '--version'], io);
     expect(code).toBe(0);
-    expect(getStdout()).toContain('0.2.1');
+    expect(getStdout()).toContain(cliPackageVersion);
   });
 
   it('returns 1 on invalid format', async () => {

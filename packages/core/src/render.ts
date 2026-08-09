@@ -6,6 +6,7 @@ export interface RenderOptions {
 }
 
 const EXPLANATION_MARKDOWN_LIMIT = 30;
+const FOCUS_FILE_MARKDOWN_LIMIT = 10;
 
 const KIND_HEADINGS: Record<AnalysisExplanation['kind'], string> = {
   'risk-area': 'Risk area',
@@ -130,8 +131,13 @@ function renderFocusFileLines(groups: FocusFileGroup[]): string {
     if (lines.at(-1) !== '') lines.push('');
     lines.push(`### ${FOCUS_GROUP_HEADINGS[group.title]}`);
     lines.push('');
-    for (const file of group.files) {
+    const shown = group.files.slice(0, FOCUS_FILE_MARKDOWN_LIMIT);
+    for (const file of shown) {
       lines.push(`- ${inlineCode(displayPath(file.path))} — ${displayPath(file.reason)}`);
+    }
+    const remaining = group.files.length - shown.length;
+    if (remaining > 0) {
+      lines.push(`- ...and ${remaining} more`);
     }
   }
 
