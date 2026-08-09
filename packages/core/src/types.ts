@@ -38,6 +38,11 @@ export interface RepositoryEvidence {
   hasCiWorkflow: boolean;
 }
 
+export interface AnalysisCoverage {
+  checked: string[];
+  notChecked: string[];
+}
+
 export interface RiskReason {
   description: string;
   points: number;
@@ -105,6 +110,7 @@ export interface AnalysisResult {
     reasons: RiskReason[];
   };
   evidence: RepositoryEvidence;
+  coverage: AnalysisCoverage;
   lowReviewValueFiles: ChangedFile[];
   reviewFocus: string[];
   focusFiles?: FocusFileGroup[];

@@ -30,6 +30,20 @@
     "hasTypecheckScript": false,
     "hasCiWorkflow": false
   },
+  "coverage": {
+    "checked": [
+      "Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration",
+      "Generated, low-review-value, test, and docs path heuristics",
+      "Repository evidence: manifests, package manager, scripts, and CI workflow presence",
+      "Git change metadata: paths, rename/copy status, and line counts (not patch contents)"
+    ],
+    "notChecked": [
+      "Diff line contents and semantic correctness",
+      "Vulnerability databases or dependency audit results",
+      "Test execution or CI job outcomes",
+      "LLM review or automated bug finding"
+    ]
+  },
   "lowReviewValueFiles": [],
   "reviewFocus": [],
   "warnings": []

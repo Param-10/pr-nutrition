@@ -86,6 +86,7 @@ export function renderJson(result: AnalysisResult, options: RenderOptions = {}):
       reasons: result.risk.reasons,
     },
     evidence: result.evidence,
+    coverage: result.coverage,
     lowReviewValueFiles: result.lowReviewValueFiles,
     reviewFocus: result.reviewFocus,
     ...(options.focusFiles && result.focusFiles !== undefined ? { focusFiles: result.focusFiles } : {}),
@@ -211,6 +212,19 @@ export function renderMarkdown(result: AnalysisResult, options: RenderOptions = 
     `- Changed docs: ${boolText(result.evidence.hasChangedDocs)}`
   ];
   parts.push(evidenceLines.join('\n'));
+
+  const coverageLines = [
+    '## Coverage',
+    '',
+    '### Checked',
+    '',
+    ...result.coverage.checked.map((item) => `- ${item}`),
+    '',
+    '### Not checked',
+    '',
+    ...result.coverage.notChecked.map((item) => `- ${item}`),
+  ];
+  parts.push(coverageLines.join('\n'));
 
   // Low review-value files
   if (result.lowReviewValueFiles.length > 0) {

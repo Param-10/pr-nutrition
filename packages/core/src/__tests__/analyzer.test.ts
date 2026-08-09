@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { analyzePullRequest } from "../analyzer.js";
 import { getRiskArea, isDocFile, isTestFile } from "../classifier.js";
+import { buildCoverage } from "../coverage.js";
 import { buildFocusFileGroups } from "../focus.js";
 import { calculateRisk } from "../scorer.js";
 import type { AnalysisResult, AreaClassification, FocusFile, FocusFileGroupTitle, RiskAreaId } from "../types.js";
@@ -95,6 +96,41 @@ describe("core analyzer", () => {
     expect(result.reviewFocus).toHaveLength(2);
     expect(result.focusFiles).toBeUndefined();
     expect(result.explanations).toBeUndefined();
+  });
+
+  it("reports coverage checked and not-checked lists, and focus ranking when requested", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "feature"]);
+    write(repoPath, "src/app.ts", "export const app = true;\n");
+    commit(repoPath, "feature");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "feature" });
+    expect(result.coverage).toEqual(buildCoverage());
+    expect(result.coverage.checked).toEqual([
+      "Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration",
+      "Generated, low-review-value, test, and docs path heuristics",
+      "Repository evidence: manifests, package manager, scripts, and CI workflow presence",
+      "Git change metadata: paths, rename/copy status, and line counts (not patch contents)",
+    ]);
+    expect(result.coverage.notChecked).toEqual([
+      "Diff line contents and semantic correctness",
+      "Vulnerability databases or dependency audit results",
+      "Test execution or CI job outcomes",
+      "LLM review or automated bug finding",
+    ]);
+
+    const withFocus = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "feature",
+      focusFiles: true,
+    });
+    expect(withFocus.coverage).toEqual(buildCoverage({ focusFiles: true }));
+    expect(withFocus.coverage.checked).toContain(
+      "Focus-file ranking into review-first, review-normally, and skim groups",
+    );
   });
 
   it("includes explanations only when requested", async () => {
