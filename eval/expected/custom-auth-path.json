@@ -1,11 +1,16 @@
 {
   "name": "custom-auth-path",
+  "intent": "true-positive",
   "expectedRiskLevel": "medium",
   "minScore": 25,
   "maxScore": 25,
-  "expectedAreas": ["authentication"],
+  "expectedAreas": [
+    "authentication"
+  ],
   "expectedLowReviewValue": [],
-  "mustIncludeFocus": ["authentication"],
+  "mustIncludeFocus": [
+    "authentication"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 1,

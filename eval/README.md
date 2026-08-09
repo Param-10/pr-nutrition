@@ -29,6 +29,20 @@ Each case creates a temporary Git repository under the operating-system temp dir
 
 Expected files assert on structured JSON fields instead of full Markdown snapshots, so wording-only renderer changes do not make the corpus brittle.
 
+Every expected file must include an `intent` field:
+
+- `false-positive`: the case must not invent risk where none exists
+- `true-positive`: the case must detect the expected real risk signal
+- `shape`: metadata/shape correctness without a precision claim
+
+After the per-case table, the runner prints:
+
+- **False-positive avoidance**: passed `false-positive` cases / total `false-positive` cases
+- **True-positive pass rate**: passed `true-positive` cases / total `true-positive` cases
+- **Overall**: total cases passed
+
+Missing or invalid `intent` values fail the harness.
+
 ## Current cases
 
 - `docs-only`: documentation-only changes should stay low-risk and avoid production-change guidance.

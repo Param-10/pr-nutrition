@@ -1,13 +1,22 @@
 {
   "name": "auth-real",
+  "intent": "true-positive",
   "expectedRiskLevel": "medium",
   "minScore": 25,
   "maxScore": 25,
-  "expectedAreas": ["authentication"],
-  "mustNotIncludeAreas": ["configuration"],
+  "expectedAreas": [
+    "authentication"
+  ],
+  "mustNotIncludeAreas": [
+    "configuration"
+  ],
   "expectedLowReviewValue": [],
-  "mustIncludeFocus": ["authentication"],
-  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "mustIncludeFocus": [
+    "authentication"
+  ],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedTests": true

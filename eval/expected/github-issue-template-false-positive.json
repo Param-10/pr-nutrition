@@ -1,12 +1,20 @@
 {
   "name": "github-issue-template-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["ci", "configuration"],
+  "mustNotIncludeAreas": [
+    "ci",
+    "configuration"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["workflow permissions", "configuration", "environment"],
+  "mustNotIncludeFocus": [
+    "workflow permissions",
+    "configuration",
+    "environment"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 2,
@@ -14,6 +22,9 @@
   },
   "expectedFocusFiles": {
     "review-first": [],
-    "review-normally": [".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/config.yml"]
+    "review-normally": [
+      ".github/ISSUE_TEMPLATE/bug_report.yml",
+      ".github/ISSUE_TEMPLATE/config.yml"
+    ]
   }
 }

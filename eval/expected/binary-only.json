@@ -1,10 +1,13 @@
 {
   "name": "binary-only",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "expectedLowReviewValue": ["assets/logo.png"],
+  "expectedLowReviewValue": [
+    "assets/logo.png"
+  ],
   "expectedWarnings": [],
   "expectedSummary": {
     "filesChanged": 1,

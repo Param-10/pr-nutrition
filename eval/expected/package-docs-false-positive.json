@@ -1,12 +1,18 @@
 {
   "name": "package-docs-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["dependencies"],
+  "mustNotIncludeAreas": [
+    "dependencies"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["dependency", "production changes without changed tests"],
+  "mustNotIncludeFocus": [
+    "dependency",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true
@@ -17,6 +23,9 @@
   },
   "expectedFocusFiles": {
     "review-first": [],
-    "review-normally": ["docs/npm-publishing.md", "docs/package-manager.md"]
+    "review-normally": [
+      "docs/npm-publishing.md",
+      "docs/package-manager.md"
+    ]
   }
 }

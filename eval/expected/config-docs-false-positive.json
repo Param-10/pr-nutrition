@@ -1,12 +1,19 @@
 {
   "name": "config-docs-false-positive",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["configuration"],
+  "mustNotIncludeAreas": [
+    "configuration"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["configuration", "environment", "production changes without changed tests"],
+  "mustNotIncludeFocus": [
+    "configuration",
+    "environment",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true
@@ -17,6 +24,9 @@
   },
   "expectedFocusFiles": {
     "review-first": [],
-    "review-normally": ["docs/config-examples.md", "docs/configuration.md"]
+    "review-normally": [
+      "docs/config-examples.md",
+      "docs/configuration.md"
+    ]
   }
 }

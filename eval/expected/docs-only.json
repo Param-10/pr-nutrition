@@ -1,12 +1,20 @@
 {
   "name": "docs-only",
+  "intent": "false-positive",
   "expectedRiskLevel": "low",
   "minScore": 0,
   "maxScore": 0,
   "expectedAreas": [],
-  "mustNotIncludeAreas": ["authentication", "configuration", "dependencies"],
+  "mustNotIncludeAreas": [
+    "authentication",
+    "configuration",
+    "dependencies"
+  ],
   "expectedLowReviewValue": [],
-  "mustNotIncludeFocus": ["authentication", "production changes without changed tests"],
+  "mustNotIncludeFocus": [
+    "authentication",
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasChangedDocs": true,

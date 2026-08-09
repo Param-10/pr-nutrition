@@ -1,13 +1,22 @@
 {
   "name": "ci-only",
+  "intent": "true-positive",
   "expectedRiskLevel": "low",
   "minScore": 8,
   "maxScore": 8,
-  "expectedAreas": ["ci"],
-  "mustNotIncludeAreas": ["configuration"],
+  "expectedAreas": [
+    "ci"
+  ],
+  "mustNotIncludeAreas": [
+    "configuration"
+  ],
   "expectedLowReviewValue": [],
-  "mustIncludeFocus": ["workflow"],
-  "mustNotIncludeFocus": ["production changes without changed tests"],
+  "mustIncludeFocus": [
+    "workflow"
+  ],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
   "expectedWarnings": [],
   "expectedEvidence": {
     "hasCiWorkflow": true
