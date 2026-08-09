@@ -1,17 +1,27 @@
 import type { RiskAreaId } from "./types.js";
 
 const DEPENDENCY_FILE_NAMES = new Set([
+  "build.gradle",
+  "build.gradle.kts",
   "bun.lock",
   "bun.lockb",
   "cargo.lock",
   "cargo.toml",
+  "composer.json",
+  "composer.lock",
+  "gemfile",
+  "gemfile.lock",
   "go.mod",
   "go.sum",
   "package-lock.json",
   "package.json",
+  "pipfile",
+  "pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
+  "pom.xml",
   "pyproject.toml",
+  "requirements.txt",
   "uv.lock",
   "yarn.lock",
 ]);
@@ -20,7 +30,10 @@ const LOW_VALUE_FILE_NAMES = new Set([
   "bun.lock",
   "bun.lockb",
   "cargo.lock",
+  "composer.lock",
+  "gemfile.lock",
   "package-lock.json",
+  "pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
   "uv.lock",
@@ -107,8 +120,8 @@ export interface RiskAreaDefinition {
    * Reduced tiers for areas where the amount changed is a reasonable proxy for
    * review effort. Areas without tiers are scored on presence alone, because
    * there the existence of the change is the signal rather than its size: a
-   * one-line migration can drop a table, and a two-line auth change can invert
-   * a permission check.
+   * one-line migration can drop a table, a two-line auth change can invert
+   * a permission check, and a one-line CI change can weaken a required gate.
    */
   magnitudePoints?: { light: number; moderate: number };
   focus: string;
@@ -131,7 +144,6 @@ export const RISK_AREAS: readonly RiskAreaDefinition[] = [
     id: "ci",
     label: "CI and workflows",
     points: 20,
-    magnitudePoints: { light: 8, moderate: 14 },
     focus: "Review workflow permissions, triggers, and use of untrusted inputs.",
   },
   {
@@ -170,6 +182,9 @@ export function isTestFile(path: string): boolean {
 
 export function isDocFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
+  const name = lowerPath.split("/").at(-1) ?? lowerPath;
+  // Dependency manifests like requirements.txt are not documentation.
+  if (DEPENDENCY_FILE_NAMES.has(name)) return false;
   return (
     /(^|\/)docs?(\/|$)/.test(lowerPath) ||
     /(^|\/)(readme|changelog|contributing)(\.[^/]*)?$/.test(lowerPath) ||

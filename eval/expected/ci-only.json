@@ -1,9 +1,9 @@
 {
   "name": "ci-only",
   "intent": "true-positive",
-  "expectedRiskLevel": "low",
-  "minScore": 8,
-  "maxScore": 8,
+  "expectedRiskLevel": "medium",
+  "minScore": 20,
+  "maxScore": 20,
   "expectedAreas": [
     "ci"
   ],

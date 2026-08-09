@@ -3,23 +3,75 @@ import { join } from "node:path";
 import type { PackageManager, RepositoryEvidence } from "./types.js";
 
 const MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"] as const;
+const WORKSPACE_ROOTS = ["packages", "apps", "libs", "services"] as const;
 const MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
 
+const PACKAGE_MANAGER_CANDIDATES: ReadonlyArray<[string, PackageManager]> = [
+  ["pnpm-lock.yaml", "pnpm"],
+  ["yarn.lock", "yarn"],
+  ["package-lock.json", "npm"],
+  ["uv.lock", "uv"],
+  ["poetry.lock", "poetry"],
+  ["Cargo.lock", "cargo"],
+  ["go.mod", "go"],
+];
+
+function listWorkspacePackageDirs(repoPath: string): string[] {
+  const packageDirs: string[] = [];
+  for (const root of WORKSPACE_ROOTS) {
+    const rootPath = join(repoPath, root);
+    if (!existsSync(rootPath)) continue;
+    try {
+      if (!lstatSync(rootPath).isDirectory()) continue;
+      for (const entry of readdirSync(rootPath, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          packageDirs.push(join(root, entry.name));
+        }
+      }
+    } catch {
+      // Ignore unreadable workspace roots; callers may add a warning later.
+    }
+  }
+  return packageDirs.sort();
+}
+
+function collectManifestPaths(repoPath: string): string[] {
+  const manifests: string[] = [];
+  for (const manifest of MANIFESTS) {
+    if (existsSync(join(repoPath, manifest))) {
+      manifests.push(manifest);
+    }
+  }
+  for (const packageDir of listWorkspacePackageDirs(repoPath)) {
+    for (const manifest of MANIFESTS) {
+      const relativePath = `${packageDir}/${manifest}`;
+      if (existsSync(join(repoPath, relativePath))) {
+        manifests.push(relativePath);
+      }
+    }
+  }
+  return manifests;
+}
+
+function detectPackageManagerAt(repoPath: string, relativeDir = ""): PackageManager | undefined {
+  const base = relativeDir.length === 0 ? repoPath : join(repoPath, relativeDir);
+  return PACKAGE_MANAGER_CANDIDATES.find(([path]) => existsSync(join(base, path)))?.[1];
+}
+
 export function detectPackageManager(repoPath: string): PackageManager {
-  const candidates: ReadonlyArray<[string, PackageManager]> = [
-    ["pnpm-lock.yaml", "pnpm"],
-    ["yarn.lock", "yarn"],
-    ["package-lock.json", "npm"],
-    ["uv.lock", "uv"],
-    ["poetry.lock", "poetry"],
-    ["Cargo.lock", "cargo"],
-    ["go.mod", "go"],
-  ];
-  return candidates.find(([path]) => existsSync(join(repoPath, path)))?.[1] ?? "unknown";
+  const rootManager = detectPackageManagerAt(repoPath);
+  if (rootManager !== undefined) return rootManager;
+
+  for (const packageDir of listWorkspacePackageDirs(repoPath)) {
+    const nestedManager = detectPackageManagerAt(repoPath, packageDir);
+    if (nestedManager !== undefined) return nestedManager;
+  }
+
+  return "unknown";
 }
 
 export function collectRepositoryEvidence(repoPath: string, warnings: string[]): RepositoryEvidence {
-  const manifests = MANIFESTS.filter((manifest) => existsSync(join(repoPath, manifest)));
+  const manifests = collectManifestPaths(repoPath);
   const evidence: RepositoryEvidence = {
     hasChangedTests: false,
     hasChangedDocs: false,

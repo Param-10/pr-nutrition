@@ -110,7 +110,7 @@ Medium: 20–49
 High:   50–100
 ```
 
-An area contributes points once, no matter how many files matched it. CI, API, dependency, and configuration points scale with how much changed in that area, so a one-line lockfile bump does not score like a dependency overhaul. Migrations and authentication always score their full value, because a single line in either can drop a table or invert a permission check.
+An area contributes points once, no matter how many files matched it. API, dependency, and configuration points scale with how much changed in that area, so a one-line lockfile bump does not score like a dependency overhaul. Migrations, authentication, and CI always score their full value, because a single line in any of those can drop a table, invert a permission check, or weaken a required gate.
 
 Scaling uses reviewable lines, so generated files and lockfiles do not inflate an area regardless of how large their diff looks.
 

@@ -348,6 +348,19 @@ describe("core analyzer", () => {
     });
   });
 
+  it("detects nested workspace manifests for monorepo evidence", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "packages/api/package.json", JSON.stringify({ name: "api" }));
+    write(repoPath, "apps/web/package.json", JSON.stringify({ name: "web" }));
+    write(repoPath, "apps/web/pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+    commit(repoPath, "monorepo base");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "main" });
+    expect(result.evidence.hasPackageManifest).toBe(true);
+    expect(result.evidence.manifests).toEqual(["apps/web/package.json", "packages/api/package.json"]);
+    expect(result.evidence.packageManager).toBe("pnpm");
+  });
+
   it("warns about malformed package.json instead of failing", async () => {
     const repoPath = createRepository();
     write(repoPath, "package.json", "{invalid");
@@ -414,7 +427,7 @@ describe("core analyzer", () => {
 
     const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "feature" });
     expect(result.areas).toHaveLength(6);
-    expect(result.risk.score).toBe(78);
+    expect(result.risk.score).toBe(90);
     expect(result.risk.level).toBe("high");
     expect(result.reviewFocus).toHaveLength(5);
     expect(result.reviewFocus[0]).toMatch(/migration/i);
@@ -458,6 +471,14 @@ describe("built-in risk classification precedence", () => {
     expect(getRiskArea("src/auth/session.ts")).toBe("authentication");
     expect(getRiskArea(".github/workflows/ci.yml")).toBe("ci");
     expect(getRiskArea("package.json")).toBe("dependencies");
+    expect(getRiskArea("requirements.txt")).toBe("dependencies");
+    expect(isDocFile("requirements.txt")).toBe(false);
+    expect(getRiskArea("Gemfile")).toBe("dependencies");
+    expect(getRiskArea("Gemfile.lock")).toBe("dependencies");
+    expect(getRiskArea("pom.xml")).toBe("dependencies");
+    expect(getRiskArea("build.gradle")).toBe("dependencies");
+    expect(getRiskArea("build.gradle.kts")).toBe("dependencies");
+    expect(getRiskArea("composer.json")).toBe("dependencies");
     expect(getRiskArea(".env.example")).toBe("configuration");
     expect(getRiskArea("config/runtime.json")).toBe("configuration");
   });
@@ -610,7 +631,7 @@ describe("risk scoring boundaries", () => {
     ).toMatchObject({ score: 100, level: "high" });
   });
 
-  it("scores migrations and authentication on presence, not on size", () => {
+  it("scores migrations, authentication, and CI on presence, not on size", () => {
     expect(calculateRisk(0, 0, areas("migrations"), areaLines({ migrations: 1 }))).toMatchObject({
       score: 30,
     });
@@ -620,9 +641,11 @@ describe("risk scoring boundaries", () => {
     expect(
       calculateRisk(0, 0, areas("authentication"), areaLines({ authentication: 1 })),
     ).toMatchObject({ score: 25 });
+    expect(calculateRisk(0, 0, areas("ci"), areaLines({ ci: 1 }))).toMatchObject({ score: 20 });
+    expect(calculateRisk(0, 0, areas("ci"), areaLines({ ci: 500 }))).toMatchObject({ score: 20 });
   });
 
-  it("scales the remaining areas with how much changed in them", () => {
+  it("scales API, dependency, and configuration points with how much changed", () => {
     expect(calculateRisk(0, 0, areas("dependencies"), areaLines({ dependencies: 0 }))).toMatchObject(
       { score: 5 },
     );
