@@ -18,6 +18,16 @@ export type CliIO = {
   stderr: (text: string) => void;
 };
 
+type RiskLevel = "low" | "medium" | "high";
+
+const RISK_LEVEL_RANK: Record<RiskLevel, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+};
+
+const FAIL_ON_CHOICES = ["low", "medium", "high"] as const;
+
 function readCliVersion(): string {
   // From src/ during tests and from dist/ after the CJS bundle, package.json is one level up.
   const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
@@ -26,6 +36,14 @@ function readCliVersion(): string {
     throw new Error("Unable to read pr-nutrition version from package.json");
   }
   return packageJson.version;
+}
+
+function isRiskLevel(value: unknown): value is RiskLevel {
+  return value === "low" || value === "medium" || value === "high";
+}
+
+function meetsFailOnThreshold(actual: RiskLevel, threshold: RiskLevel): boolean {
+  return RISK_LEVEL_RANK[actual] >= RISK_LEVEL_RANK[threshold];
 }
 
 async function runDoctorCli(argv: string[], io: CliIO): Promise<number> {
@@ -72,19 +90,20 @@ async function runDoctorCli(argv: string[], io: CliIO): Promise<number> {
   return result.status === "error" ? 2 : 0;
 }
 
-export async function runCli(
-  argv: string[],
-  io: CliIO = {
-    stdout: (text: string) => process.stdout.write(text),
-    stderr: (text: string) => process.stderr.write(text),
-  }
-): Promise<number> {
-  const normalizedArgv = argv[2] === "--" ? [argv[0], argv[1], ...argv.slice(3)] : argv;
+type AnalyzeCommandOptions = {
+  commandName: string;
+  description: string;
+  defaultFocusFiles: boolean;
+  helpExamples: string;
+  parseArgv: string[];
+};
+
+async function runAnalyzeCli(argv: string[], io: CliIO, command: AnalyzeCommandOptions): Promise<number> {
   const program = new Command();
 
   program
-    .name("pr-nutrition")
-    .description("A deterministic pull request review-readiness label generator.")
+    .name(command.commandName)
+    .description(command.description)
     .version(readCliVersion())
     .option("--repo <path>", "repository path", ".")
     .option("--base <ref>", "base ref", "main")
@@ -96,45 +115,20 @@ export async function runCli(
     .option("--no-config", "disable config file loading")
     .option("--explain", "include a deterministic explanation of classifications")
     .option("--focus-files", "include deterministic file review priority groups")
+    .option("--fail-on <level>", "exit 3 when risk level is at least low, medium, or high")
     .allowExcessArguments(false)
     .exitOverride()
     .configureOutput({
       writeOut: (str) => io.stdout(str),
       writeErr: (str) => io.stderr(str),
     })
-    .addHelpText("after", `
-
-Examples:
-  $ pr-nutrition
-  $ pr-nutrition --json
-  $ pr-nutrition --output pr-nutrition.md
-  $ pr-nutrition --base origin/main --head HEAD
-  $ pr-nutrition --config .pr-nutrition.json
-  $ pr-nutrition --no-config
-  $ pr-nutrition --explain
-  $ pr-nutrition --json --explain
-  $ pr-nutrition --focus-files
-  $ pr-nutrition doctor
-`);
-
-  const hasConfigOption = normalizedArgv.some(
-    (argument) => argument === "--config" || argument.startsWith("--config="),
-  );
-  const hasNoConfigOption = normalizedArgv.includes("--no-config");
-  if (hasConfigOption && hasNoConfigOption) {
-    io.stderr("pr-nutrition: error: --config cannot be combined with --no-config.\nRun `pr-nutrition --help` for usage.\n");
-    return 1;
-  }
-
-  if (normalizedArgv[2] === "doctor") {
-    return runDoctorCli(normalizedArgv, io);
-  }
+    .addHelpText("after", command.helpExamples);
 
   try {
-    await program.parseAsync(normalizedArgv);
+    await program.parseAsync(command.parseArgv);
   } catch (err) {
     if (err instanceof CommanderError) {
-      if (err.code === 'commander.version' || err.code === 'commander.helpDisplayed') {
+      if (err.code === "commander.version" || err.code === "commander.helpDisplayed") {
         return 0;
       }
       return 1;
@@ -145,17 +139,30 @@ Examples:
   const options = program.opts();
 
   if (options.format !== "markdown" && options.format !== "json") {
-    io.stderr(`pr-nutrition: error: option '--format' argument '${options.format}' is invalid. Allowed choices are markdown, json.\nRun \`pr-nutrition --help\` for usage.\n`);
+    io.stderr(
+      `pr-nutrition: error: option '--format' argument '${options.format}' is invalid. Allowed choices are markdown, json.\nRun \`pr-nutrition --help\` for usage.\n`,
+    );
     return 1;
   }
 
   const formatWasProvided = program.getOptionValueSource("format") !== "default";
   if (options.json && formatWasProvided && options.format !== "json") {
-    io.stderr("pr-nutrition: error: --json cannot be combined with --format markdown.\nRun `pr-nutrition --help` for usage.\n");
+    io.stderr(
+      "pr-nutrition: error: --json cannot be combined with --format markdown.\nRun `pr-nutrition --help` for usage.\n",
+    );
+    return 1;
+  }
+
+  if (options.failOn !== undefined && !isRiskLevel(options.failOn)) {
+    io.stderr(
+      `pr-nutrition: error: option '--fail-on' argument '${options.failOn}' is invalid. Allowed choices are ${FAIL_ON_CHOICES.join(", ")}.\nRun \`pr-nutrition --help\` for usage.\n`,
+    );
     return 1;
   }
 
   const format = options.json ? "json" : options.format;
+  // check enables focus files by default; the main command only does when --focus-files is set.
+  const includeFocusFiles = command.defaultFocusFiles || options.focusFiles === true;
 
   let config: AnalysisConfig | undefined;
   try {
@@ -177,17 +184,15 @@ Examples:
       headRef: options.head,
       ...(config === undefined ? {} : { config }),
       ...(options.explain === true ? { explain: true } : {}),
-      ...(options.focusFiles === true ? { focusFiles: true } : {}),
+      ...(includeFocusFiles ? { focusFiles: true } : {}),
     });
 
     const renderOptions = {
       explain: options.explain === true,
-      focusFiles: options.focusFiles === true,
+      focusFiles: includeFocusFiles,
     };
     const output =
-      format === "json"
-        ? renderJson(analysis, renderOptions)
-        : renderMarkdown(analysis, renderOptions);
+      format === "json" ? renderJson(analysis, renderOptions) : renderMarkdown(analysis, renderOptions);
 
     if (options.output) {
       try {
@@ -200,11 +205,85 @@ Examples:
     } else {
       io.stdout(output);
     }
-    
+
+    if (isRiskLevel(options.failOn) && meetsFailOnThreshold(analysis.risk.level, options.failOn)) {
+      io.stderr(
+        `pr-nutrition: risk level ${analysis.risk.level} meets --fail-on ${options.failOn}.\n`,
+      );
+      return 3;
+    }
+
     return 0;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     io.stderr(`pr-nutrition: ${msg}\n`);
     return 2;
   }
+}
+
+export async function runCli(
+  argv: string[],
+  io: CliIO = {
+    stdout: (text: string) => process.stdout.write(text),
+    stderr: (text: string) => process.stderr.write(text),
+  },
+): Promise<number> {
+  const normalizedArgv = argv[2] === "--" ? [argv[0], argv[1], ...argv.slice(3)] : argv;
+
+  const hasConfigOption = normalizedArgv.some(
+    (argument) => argument === "--config" || argument.startsWith("--config="),
+  );
+  const hasNoConfigOption = normalizedArgv.includes("--no-config");
+  if (hasConfigOption && hasNoConfigOption) {
+    io.stderr(
+      "pr-nutrition: error: --config cannot be combined with --no-config.\nRun `pr-nutrition --help` for usage.\n",
+    );
+    return 1;
+  }
+
+  if (normalizedArgv[2] === "doctor") {
+    return runDoctorCli(normalizedArgv, io);
+  }
+
+  if (normalizedArgv[2] === "check") {
+    return runAnalyzeCli(normalizedArgv, io, {
+      commandName: "pr-nutrition check",
+      description:
+        "Analyze the current branch before opening or pushing a PR. Enables focus-file groups by default and never blocks unless --fail-on is set.",
+      defaultFocusFiles: true,
+      parseArgv: [normalizedArgv[0] ?? "node", "pr-nutrition check", ...normalizedArgv.slice(3)],
+      helpExamples: `
+
+Examples:
+  $ pr-nutrition check
+  $ pr-nutrition check --base main
+  $ pr-nutrition check --fail-on high
+  $ pr-nutrition check --json --output pr-nutrition.json
+`,
+    });
+  }
+
+  return runAnalyzeCli(normalizedArgv, io, {
+    commandName: "pr-nutrition",
+    description: "A deterministic pull request review-readiness label generator.",
+    defaultFocusFiles: false,
+    parseArgv: normalizedArgv,
+    helpExamples: `
+
+Examples:
+  $ pr-nutrition
+  $ pr-nutrition --json
+  $ pr-nutrition --output pr-nutrition.md
+  $ pr-nutrition --base origin/main --head HEAD
+  $ pr-nutrition --config .pr-nutrition.json
+  $ pr-nutrition --no-config
+  $ pr-nutrition --explain
+  $ pr-nutrition --json --explain
+  $ pr-nutrition --focus-files
+  $ pr-nutrition --fail-on medium
+  $ pr-nutrition check
+  $ pr-nutrition check --fail-on high
+  $ pr-nutrition doctor
+`,
+  });
 }

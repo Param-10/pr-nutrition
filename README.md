@@ -135,13 +135,13 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current stable npm release: `pr-nutrition@0.2.1`.
-Previous release: `pr-nutrition@0.2.0`.
+Current stable npm release: `pr-nutrition@0.3.0`.
+Previous release: `pr-nutrition@0.2.1`.
 
 ```bash
-npx pr-nutrition@0.2.1
-npx pr-nutrition@0.2.1 --help
-npx pr-nutrition@0.2.1 doctor
+npx pr-nutrition@0.3.0
+npx pr-nutrition@0.3.0 --help
+npx pr-nutrition@0.3.0 doctor
 ```
 
 ---
@@ -160,6 +160,10 @@ pr-nutrition --explain
 pr-nutrition --json --explain
 pr-nutrition --focus-files
 pr-nutrition --json --focus-files
+pr-nutrition --fail-on medium
+pr-nutrition check
+pr-nutrition check --base main
+pr-nutrition check --fail-on high
 pr-nutrition doctor
 pr-nutrition doctor --json
 pr-nutrition doctor --base main --head HEAD
@@ -173,6 +177,12 @@ Full contract:
 pr-nutrition [--repo <path>] [--base <ref>] [--head <ref>]
              [--format <markdown|json>] [--json] [--output <file>]
              [--config <path>] [--no-config] [--explain] [--focus-files]
+             [--fail-on <low|medium|high>]
+
+pr-nutrition check [--repo <path>] [--base <ref>] [--head <ref>]
+                   [--format <markdown|json>] [--json] [--output <file>]
+                   [--config <path>] [--no-config] [--explain] [--focus-files]
+                   [--fail-on <low|medium|high>]
 
 pr-nutrition doctor [--repo <path>] [--base <ref>] [--head <ref>]
                     [--json] [--config <path>] [--no-config]
@@ -192,12 +202,31 @@ Options:
 | `--no-config`               |    `false` | Disable config loading |
 | `--explain`                 |    `false` | Add deterministic classification explanations |
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
+| `--fail-on <low\|medium\|high>` | unset | Exit `3` when risk level meets or exceeds the threshold |
 
-The `--json` shortcut is available in the current stable `0.2.1` release.
+The `--json` shortcut is available in the current stable `0.3.0` release.
+
+### Pre-PR check
+
+Use `pr-nutrition check` before opening or pushing a pull request. It runs the same analyzer as the default command, enables focus-file groups by default, and does not fail the process unless you pass `--fail-on`.
+
+```bash
+pr-nutrition check
+pr-nutrition check --base main
+pr-nutrition check --fail-on high
+pr-nutrition check --json --output pr-nutrition.json
+```
+
+Exit codes:
+
+* `0` — analysis succeeded and risk is below `--fail-on` (or `--fail-on` was not set)
+* `1` — usage / flag errors
+* `2` — analysis, config, or output failures
+* `3` — risk level meets or exceeds `--fail-on`
 
 ### Configuration
 
-Configuration support is available in the current stable `0.2.1` release.
+Configuration support is available in the current stable `0.3.0` release.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -227,7 +256,7 @@ Rules:
 
 ### Explanation
 
-Explain output is available in the current stable `0.2.1` release.
+Explain output is available in the current stable `0.3.0` release.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -269,7 +298,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is available in the current stable `0.2.1` release.
+Focus file output is available in the current stable `0.3.0` release.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -283,7 +312,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is available in the current stable `0.2.1` release.
+Doctor output is available in the current stable `0.3.0` release.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -325,7 +354,7 @@ For agents and scripts:
 
 ## GitHub Action
 
-Current Action tag: `Param-10/pr-nutrition@v0.2.1`.
+Current Action tag: `Param-10/pr-nutrition@v0.3.0`.
 
 Use the released Action tag with a read-only token and full-history checkout:
 
@@ -339,7 +368,7 @@ steps:
       fetch-depth: 0
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@v0.2.1
+    uses: Param-10/pr-nutrition@v0.3.0
 ```
 
 The Action is read-only, requires only `contents: read`, does not call the GitHub API, and does not post PR comments.
@@ -463,12 +492,14 @@ Current:
 * false-positive evaluation corpus with a reported precision summary
 * segment-anchored risk rules and magnitude-scaled scoring
 * ranked and capped focus-file lists in Markdown
+* coverage section for what was and was not checked
+* local `check` workflow and optional `--fail-on`
 
 Next:
 
 * richer deterministic framework and infrastructure rules
-* coverage section for what was and was not checked
-* optional local workflow helpers (`check`, `--fail-on`)
+* additional generated-file ecosystems
+* issue template for reporting a misclassification
 
 Later:
 

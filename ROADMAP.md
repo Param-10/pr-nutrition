@@ -30,10 +30,12 @@ PR Nutrition's center of gravity is a local-first PR triage CLI. CI and GitHub A
 - [x] corrected an eval expectation that asserted the false positive it was meant to prevent
 
 ## v0.3
-- rank and cap the review-first list so the top of the report stays short
-- false-positive benchmark reporting a precision number, with real-world repository shapes
-- local workflow support that prints or saves reports without blocking by default
-- `--fail-on` for teams that explicitly opt into CI enforcement
+- [x] rank and cap the review-first / focus-file lists so the top of the report stays short
+- [x] false-positive benchmark reporting a precision number
+- [x] broader dependency ecosystem coverage and presence-based CI scoring
+- [x] coverage section for what was checked and what was not
+- [x] local `check` workflow that prints or saves reports without blocking by default
+- [x] `--fail-on` for teams that explicitly opt into enforcement
 - richer deterministic framework and infrastructure rules
 - additional generated-file ecosystems
 - issue template for reporting a misclassification
