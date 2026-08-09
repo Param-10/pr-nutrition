@@ -21740,11 +21740,12 @@ function buildFocusFileGroups(files, areas) {
     }
     reviewNormally.push(focusFile(file, "reviewable source change"));
   }
+  const reviewableLinesByPath = new Map(
+    files.map((file) => [file.path, reviewableLineCount(file)])
+  );
   const byReviewableLinesThenPath = (left, right) => {
-    const leftFile = files.find((file) => file.path === left.path);
-    const rightFile = files.find((file) => file.path === right.path);
-    const leftLines = leftFile === void 0 ? 0 : reviewableLineCount(leftFile);
-    const rightLines = rightFile === void 0 ? 0 : reviewableLineCount(rightFile);
+    const leftLines = reviewableLinesByPath.get(left.path) ?? 0;
+    const rightLines = reviewableLinesByPath.get(right.path) ?? 0;
     if (leftLines !== rightLines) return rightLines - leftLines;
     return left.path.localeCompare(right.path);
   };
@@ -22031,6 +22032,7 @@ async function analyzePullRequest(options) {
   };
 }
 var EXPLANATION_MARKDOWN_LIMIT = 30;
+var FOCUS_FILE_MARKDOWN_LIMIT = 10;
 var KIND_HEADINGS = {
   "risk-area": "Risk area",
   generated: "Generated",
@@ -22141,8 +22143,13 @@ function renderFocusFileLines(groups) {
     if (lines.at(-1) !== "") lines.push("");
     lines.push(`### ${FOCUS_GROUP_HEADINGS[group.title]}`);
     lines.push("");
-    for (const file of group.files) {
+    const shown = group.files.slice(0, FOCUS_FILE_MARKDOWN_LIMIT);
+    for (const file of shown) {
       lines.push(`- ${inlineCode(displayPath(file.path))} \u2014 ${displayPath(file.reason)}`);
+    }
+    const remaining = group.files.length - shown.length;
+    if (remaining > 0) {
+      lines.push(`- ...and ${remaining} more`);
     }
   }
   return lines.join("\n");

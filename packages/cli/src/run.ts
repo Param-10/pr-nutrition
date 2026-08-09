@@ -1,5 +1,7 @@
 import { Command, CommanderError } from "commander";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   analyzePullRequest,
   loadAnalysisConfig,
@@ -15,6 +17,16 @@ export type CliIO = {
   stdout: (text: string) => void;
   stderr: (text: string) => void;
 };
+
+function readCliVersion(): string {
+  // From src/ during tests and from dist/ after the CJS bundle, package.json is one level up.
+  const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: unknown };
+  if (typeof packageJson.version !== "string" || packageJson.version.length === 0) {
+    throw new Error("Unable to read pr-nutrition version from package.json");
+  }
+  return packageJson.version;
+}
 
 async function runDoctorCli(argv: string[], io: CliIO): Promise<number> {
   const program = new Command();
@@ -73,7 +85,7 @@ export async function runCli(
   program
     .name("pr-nutrition")
     .description("A deterministic pull request review-readiness label generator.")
-    .version("0.2.1")
+    .version(readCliVersion())
     .option("--repo <path>", "repository path", ".")
     .option("--base <ref>", "base ref", "main")
     .option("--head <ref>", "head ref", "HEAD")

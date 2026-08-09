@@ -99,11 +99,13 @@ export function buildFocusFileGroups(
     reviewNormally.push(focusFile(file, "reviewable source change"));
   }
 
+  const reviewableLinesByPath = new Map(
+    files.map((file) => [file.path, reviewableLineCount(file)] as const),
+  );
+
   const byReviewableLinesThenPath = (left: FocusFile, right: FocusFile): number => {
-    const leftFile = files.find((file) => file.path === left.path);
-    const rightFile = files.find((file) => file.path === right.path);
-    const leftLines = leftFile === undefined ? 0 : reviewableLineCount(leftFile);
-    const rightLines = rightFile === undefined ? 0 : reviewableLineCount(rightFile);
+    const leftLines = reviewableLinesByPath.get(left.path) ?? 0;
+    const rightLines = reviewableLinesByPath.get(right.path) ?? 0;
     if (leftLines !== rightLines) return rightLines - leftLines;
     return left.path.localeCompare(right.path);
   };

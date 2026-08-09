@@ -232,6 +232,32 @@ describe('Renderers', () => {
     expect(renderMarkdown(emptyFocus, { focusFiles: true })).toContain('## Focus files\n\nNo changed files.');
   });
 
+  it('caps each focus group at 10 files in markdown and keeps JSON complete', () => {
+    const manyFiles = Array.from({ length: 12 }, (_, index) => ({
+      path: `src/auth/file-${String(index).padStart(2, '0')}.ts`,
+      reason: 'authentication risk',
+      area: 'authentication' as const,
+      status: 'modified' as const,
+    }));
+    const capped: AnalysisResult = {
+      ...minimalResult,
+      focusFiles: [
+        { title: 'review-first', files: manyFiles },
+        { title: 'review-normally', files: [] },
+        { title: 'skim', files: [] },
+      ],
+    };
+
+    const md = renderMarkdown(capped, { focusFiles: true });
+    expect(md).toContain('`src/auth/file-00.ts` — authentication risk');
+    expect(md).toContain('`src/auth/file-09.ts` — authentication risk');
+    expect(md).not.toContain('`src/auth/file-10.ts`');
+    expect(md).toContain('- ...and 2 more');
+
+    const json = JSON.parse(renderJson(capped, { focusFiles: true })) as AnalysisResult;
+    expect(json.focusFiles?.[0]?.files).toHaveLength(12);
+  });
+
   it('omits the Explanation section by default and includes it with explain', () => {
     const withExplanations: AnalysisResult = {
       ...minimalResult,
