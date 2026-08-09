@@ -48,8 +48,10 @@ describe('pr-nutrition CLI runner', () => {
     expect(getStdout()).toContain('Usage: pr-nutrition');
     expect(getStdout()).toContain('--json');
     expect(getStdout()).toContain('--focus-files');
+    expect(getStdout()).toContain('--fail-on');
     expect(getStdout()).toContain('Examples:');
     expect(getStdout()).toContain('pr-nutrition --output pr-nutrition.md');
+    expect(getStdout()).toContain('pr-nutrition check');
   });
 
   it('returns 0 and prints version on --version', async () => {
@@ -63,6 +65,14 @@ describe('pr-nutrition CLI runner', () => {
     const { io, getStderr } = createMockIO();
     const code = await runCli(['node', 'pr-nutrition', '--format', 'xml'], io);
     expect(code).toBe(1);
+    expect(getStderr()).toContain('invalid');
+  });
+
+  it('returns 1 on invalid --fail-on', async () => {
+    const { io, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', '--fail-on', 'critical'], io);
+    expect(code).toBe(1);
+    expect(getStderr()).toContain('--fail-on');
     expect(getStderr()).toContain('invalid');
   });
 
@@ -135,6 +145,58 @@ describe('pr-nutrition CLI integration', () => {
     expect(getStdout()).toContain('## Focus files');
     expect(getStdout()).toContain('### Review normally');
     expect(getStdout()).toContain('`file.txt` — reviewable source change');
+  });
+
+  it('enables focus files by default for check without blocking', async () => {
+    const { io, getStdout } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', 'check', '--repo', tmpRepo, '--base', 'HEAD~1', '--head', 'HEAD'], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('## Focus files');
+    expect(getStdout()).toContain('### Review normally');
+  });
+
+  it('returns 3 when risk meets --fail-on and still prints the report', async () => {
+    mkdirSync(path.join(tmpRepo, 'migrations'), { recursive: true });
+    writeFileSync(path.join(tmpRepo, 'migrations', '001.sql'), 'create table demo(id int);\n');
+    commitAll(tmpRepo, 'migration');
+
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli([
+      'node',
+      'pr-nutrition',
+      '--repo',
+      tmpRepo,
+      '--base',
+      'HEAD~1',
+      '--head',
+      'HEAD',
+      '--fail-on',
+      'medium',
+    ], io);
+    expect(code).toBe(3);
+    expect(getStdout()).toContain('# PR Nutrition');
+    expect(getStdout()).toMatch(/\*\*Risk:\*\* Medium/);
+    expect(getStderr()).toContain('meets --fail-on medium');
+  });
+
+  it('returns 0 for check when risk is below --fail-on', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli([
+      'node',
+      'pr-nutrition',
+      'check',
+      '--repo',
+      tmpRepo,
+      '--base',
+      'HEAD~1',
+      '--head',
+      'HEAD',
+      '--fail-on',
+      'high',
+    ], io);
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('## Focus files');
+    expect(getStderr()).not.toContain('meets --fail-on');
   });
 
   it('outputs json to stdout when --format json', async () => {

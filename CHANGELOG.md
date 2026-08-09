@@ -2,6 +2,24 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
+## 0.3.0 - 2026-08-09
+
+### Added
+
+- Markdown focus-file groups are capped at 10 entries per group with an `...and N more` line; JSON still returns the full lists.
+- Eval precision reporting: every case has an `intent`, and `pnpm eval` prints false-positive avoidance and true-positive pass rates.
+- Broader dependency manifests for Python, Ruby, Java/Gradle, and PHP (`requirements.txt`, `Gemfile`, `pom.xml`, `build.gradle`, `composer.json`, and related lockfiles).
+- Shallow monorepo evidence discovery under `packages/*`, `apps/*`, `libs/*`, and `services/*`.
+- Always-on Coverage section in Markdown and JSON describing what was checked and what was not.
+- `pr-nutrition check` for pre-PR local analysis with focus-file groups enabled by default.
+- Opt-in `--fail-on <low|medium|high>` on the main command and `check` (exit code `3` when the threshold is met).
+
+### Changed
+
+- CI risk is presence-based at full points (20), matching migrations and authentication.
+- CLI `--version` reads the published package version from `package.json` instead of a hardcoded string.
+- Focus-file sorting precomputes reviewable line counts instead of scanning the file list on every comparison.
+
 ## 0.2.1 - 2026-08-06
 
 ### Fixed
