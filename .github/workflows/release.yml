@@ -19,6 +19,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js
@@ -51,6 +52,15 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Evaluate rule corpus
+        run: pnpm eval
+
+      - name: Enforce commit authoring rules
+        run: pnpm policy:check
+
+      - name: Verify committed Action bundle
+        run: pnpm action:bundle-check
 
       - name: Build
         run: pnpm build

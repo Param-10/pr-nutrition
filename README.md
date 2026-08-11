@@ -79,7 +79,7 @@ It gives reviewers a small “nutrition label” for the PR so they can quickly 
 
 The goal is not to replace review. The goal is to make review less exhausting.
 
-The built-in eval corpus currently reports **100% false-positive avoidance** (`16/16` guard cases) alongside true-positive coverage for real risk signals. Run `pnpm eval` to regenerate that precision summary locally. See [eval/README.md](eval/README.md).
+The built-in eval corpus currently passes `16/16` false-positive guards and `7/7` true-positive guards. These are curated regression cases, not statistical precision or recall on real-world pull requests. Run `pnpm eval` to regenerate the guard-case summary locally. See [eval/README.md](eval/README.md).
 
 ---
 
@@ -135,13 +135,13 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current stable npm release: `pr-nutrition@0.3.0`.
-Previous release: `pr-nutrition@0.2.1`.
+Current stable npm release: `pr-nutrition@0.3.1`.
+Previous release: `pr-nutrition@0.3.0`.
 
 ```bash
-npx pr-nutrition@0.3.0
-npx pr-nutrition@0.3.0 --help
-npx pr-nutrition@0.3.0 doctor
+npx pr-nutrition@0.3.1
+npx pr-nutrition@0.3.1 --help
+npx pr-nutrition@0.3.1 doctor
 ```
 
 ---
@@ -204,7 +204,7 @@ Options:
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
 | `--fail-on <low\|medium\|high>` | unset | Exit `3` when risk level meets or exceeds the threshold |
 
-The `--json` shortcut is available in the current stable `0.3.0` release.
+The `--json` shortcut is available in the current stable `0.3.1` release.
 
 ### Pre-PR check
 
@@ -226,7 +226,7 @@ Exit codes:
 
 ### Configuration
 
-Configuration support is available in the current stable `0.3.0` release.
+Configuration support is available in the current stable `0.3.1` release.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -256,7 +256,7 @@ Rules:
 
 ### Explanation
 
-Explain output is available in the current stable `0.3.0` release.
+Explain output is available in the current stable `0.3.1` release.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -298,7 +298,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is available in the current stable `0.3.0` release.
+Focus file output is available in the current stable `0.3.1` release.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -312,7 +312,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is available in the current stable `0.3.0` release.
+Doctor output is available in the current stable `0.3.1` release.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -352,9 +352,22 @@ For agents and scripts:
 
 ---
 
+## Analyze another local project
+
+PR Nutrition can analyze any Git repository already on your machine; it does not need to be installed inside that project.
+
+```bash
+pr-nutrition doctor --repo /absolute/path/to/project --base origin/main --head feature/my-change
+pr-nutrition check --repo /absolute/path/to/project --base origin/main --head feature/my-change
+```
+
+Use exact base and head commit SHAs for historical pull requests, then save JSON reports to a private directory outside the analyzed repository. See the [real-world benchmark guide](docs/real-world-benchmark.md) for active branches, historical GitHub PRs, privacy guidance, and the manual labeling format for the planned 25–50 PR corpus.
+
+---
+
 ## GitHub Action
 
-Current Action tag: `Param-10/pr-nutrition@v0.3.0`.
+Current Action tag: `Param-10/pr-nutrition@v0.3.1`.
 
 Use the released Action tag with a read-only token and full-history checkout:
 
@@ -368,7 +381,7 @@ steps:
       fetch-depth: 0
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@v0.3.0
+    uses: Param-10/pr-nutrition@v0.3.1
 ```
 
 The Action is read-only, requires only `contents: read`, does not call the GitHub API, and does not post PR comments.
@@ -454,6 +467,8 @@ PR Nutrition should never create work for reviewers. It should remove review noi
 
 ## Local development
 
+Activate Node 24.17.0 from `.node-version` (or another supported Node version from 22.13 up to, but not including, 27) before running pnpm.
+
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
@@ -468,6 +483,7 @@ pnpm test
 pnpm eval
 pnpm typecheck
 pnpm lint
+pnpm policy:check
 pnpm action:bundle-check
 pnpm build
 pnpm smoke
@@ -489,17 +505,19 @@ Current:
 * committed reproducible Action bundle
 * strict JSON configuration
 * `--json`, `--explain`, `--focus-files`, and `doctor`
-* false-positive evaluation corpus with a reported precision summary
+* false-positive evaluation corpus with reported guard-case pass rates
 * segment-anchored risk rules and magnitude-scaled scoring
 * ranked and capped focus-file lists in Markdown
 * coverage section for what was and was not checked
 * local `check` workflow and optional `--fail-on`
+* discoverable `check` and `doctor` subcommands
+* PR authoring-policy enforcement and a supported local Node pin
 
 Next:
 
 * richer deterministic framework and infrastructure rules
 * additional generated-file ecosystems
-* issue template for reporting a misclassification
+* a locally labeled real-world metadata corpus before claiming precision or recall
 
 Later:
 
@@ -521,4 +539,5 @@ See [Roadmap](ROADMAP.md).
 * [Code of Conduct](CODE_OF_CONDUCT.md)
 * [Architecture Notes](docs/architecture.md)
 * [Privacy Model](docs/privacy.md)
+* [Real-world Benchmark Guide](docs/real-world-benchmark.md)
 * [Release Process](docs/release-process.md)

@@ -16,13 +16,13 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current stable npm release: `pr-nutrition@0.3.0`.
-Previous release: `pr-nutrition@0.2.1`.
+Current stable npm release: `pr-nutrition@0.3.1`.
+Previous release: `pr-nutrition@0.3.0`.
 
 ```bash
-npx pr-nutrition@0.3.0
-npx pr-nutrition@0.3.0 --help
-npx pr-nutrition@0.3.0 doctor
+npx pr-nutrition@0.3.1
+npx pr-nutrition@0.3.1 --help
+npx pr-nutrition@0.3.1 doctor
 ```
 
 ## Usage
@@ -49,6 +49,15 @@ pr-nutrition doctor --base main --head HEAD
 pr-nutrition doctor --config .pr-nutrition.json
 pr-nutrition doctor --no-config
 ```
+
+PR Nutrition can analyze another repository without being installed inside it:
+
+```bash
+pr-nutrition doctor --repo /absolute/path/to/project --base origin/main --head feature/my-change
+pr-nutrition check --repo /absolute/path/to/project --base origin/main --head feature/my-change
+```
+
+For historical pull requests and the planned local 25–50 PR corpus, see the [real-world benchmark guide](https://github.com/Param-10/pr-nutrition/blob/main/docs/real-world-benchmark.md).
 
 ```text
 pr-nutrition
@@ -78,11 +87,11 @@ pr-nutrition doctor
   --no-config                   disable config loading
 ```
 
-The `--json` shortcut is available in the current stable `0.3.0` release.
+The `--json` shortcut is available in the current stable `0.3.1` release.
 
 ## Configuration
 
-Configuration support is available in the current stable `0.3.0` release.
+Configuration support is available in the current stable `0.3.1` release.
 
 The CLI automatically discovers `.pr-nutrition.json` at the repository root. Config extends built-in classification with repository-specific paths and never weakens built-in protections or changes risk scoring.
 
@@ -106,7 +115,7 @@ Patterns are POSIX-style globs matched against repo-relative paths. Validation i
 
 ## Explanation
 
-Explain output is available in the current stable `0.3.0` release.
+Explain output is available in the current stable `0.3.1` release.
 
 `--explain` reports why each file was classified. Default output is unchanged unless `--explain` is passed.
 
@@ -119,7 +128,7 @@ Built-in rule IDs: `builtin.path.<risk-area>`, `builtin.path.generated`, `builti
 
 ## Focus files
 
-Focus file output is available in the current stable `0.3.0` release.
+Focus file output is available in the current stable `0.3.1` release.
 
 `--focus-files` adds deterministic file review groups: `Review first`, `Review normally`, and `Skim / low-review-value`. It works with Markdown, `--json`, `--format json`, and `--explain`.
 
@@ -131,7 +140,7 @@ Default output is unchanged unless `--focus-files` is passed. Markdown caps each
 
 ## Doctor
 
-Doctor output is available in the current stable `0.3.0` release.
+Doctor output is available in the current stable `0.3.1` release.
 
 `pr-nutrition doctor` checks local setup before analysis: Git repository detection, base/head refs, merge-base availability, config validity, shallow repository status, package manager evidence, test/typecheck scripts, and CI workflow filenames.
 
