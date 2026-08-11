@@ -1,0 +1,27 @@
+{
+  "name": "focus-ranking-dogfood",
+  "intent": "shape",
+  "expectedRiskLevel": "low",
+  "minScore": 10,
+  "maxScore": 10,
+  "expectedAreas": [
+    "dependencies",
+    "configuration"
+  ],
+  "expectedLowReviewValue": [],
+  "expectedWarnings": [],
+  "expectedSummary": {
+    "filesChanged": 3,
+    "reviewableFiles": 3
+  },
+  "expectedFocusFiles": {
+    "review-first": [
+      "packages/cli/src/run.ts"
+    ],
+    "review-normally": [
+      "packages/cli/package.json",
+      "packages/cli/tsup.config.ts"
+    ],
+    "skim": []
+  }
+}

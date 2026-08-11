@@ -226,10 +226,10 @@ describe("core analyzer", () => {
       ["migrations/002_add_users.sql", "migrations", "migration risk"],
       ["src/auth/session.ts", "authentication", "authentication risk"],
       [".github/workflows/ci.yml", "ci", "CI/workflow risk"],
-      ["packages/api/openapi.yaml", "api", "API contract risk"],
     ]);
     expect(focusGroup(result, "review-normally").map((file) => file.path)).toEqual([
       "src/user/z-profile.ts",
+      "packages/api/openapi.yaml",
       "src/user/a-profile.ts",
     ]);
     expect(focusGroup(result, "skim").map((file) => [file.path, file.reason])).toEqual([
@@ -308,6 +308,39 @@ describe("core analyzer", () => {
       { title: "review-first", files: [] },
       { title: "review-normally", files: [] },
       { title: "skim", files: [] },
+    ]);
+  });
+
+  it("ranks large implementation changes before light dependency and configuration changes", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "packages/cli/package.json", '{"version":"0.2.1"}\n');
+    write(repoPath, "packages/cli/tsup.config.ts", "export const target = 'node22';\n");
+    write(repoPath, "packages/cli/src/run.ts", "export const before = true;\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "feature"]);
+
+    write(repoPath, "packages/cli/package.json", '{"version":"0.3.0"}\n');
+    write(repoPath, "packages/cli/tsup.config.ts", "export const target = 'node24';\n");
+    write(
+      repoPath,
+      "packages/cli/src/run.ts",
+      Array.from({ length: 90 }, (_, index) => `export const line${index} = ${index};`).join("\n") + "\n",
+    );
+    commit(repoPath, "trust release");
+
+    const result = await analyzePullRequest({
+      repoPath,
+      baseRef: "main",
+      headRef: "feature",
+      focusFiles: true,
+    });
+
+    expect(focusGroup(result, "review-first").map((file) => [file.path, file.reason])).toEqual([
+      ["packages/cli/src/run.ts", "large reviewable change"],
+    ]);
+    expect(focusGroup(result, "review-normally").map((file) => [file.path, file.reason])).toEqual([
+      ["packages/cli/package.json", "dependency risk"],
+      ["packages/cli/tsup.config.ts", "configuration risk"],
     ]);
   });
 
@@ -594,7 +627,7 @@ describe("built-in risk classification precedence", () => {
     expect(getRiskArea("openapi.yaml")).toBe("api");
   });
 
-  it("keeps docs, fixtures, and generated files out of review-first when names look risky", () => {
+  it("keeps docs, fixtures, generated files, and light scaled risks out of review-first", () => {
     const groups = buildFocusFileGroups(
       [
         {
@@ -640,11 +673,9 @@ describe("built-in risk classification precedence", () => {
       ],
     );
 
-    expect(groups.find((group) => group.title === "review-first")?.files.map((file) => file.path)).toEqual([
-      "src/api/routes.ts",
-    ]);
+    expect(groups.find((group) => group.title === "review-first")?.files).toEqual([]);
     expect(groups.find((group) => group.title === "review-normally")?.files.map((file) => file.path)).toEqual(
-      expect.arrayContaining(["docs/api/reference.md", "tests/fixtures/api-token.json"]),
+      expect.arrayContaining(["src/api/routes.ts", "docs/api/reference.md", "tests/fixtures/api-token.json"]),
     );
     expect(groups.find((group) => group.title === "skim")?.files).toEqual([
       expect.objectContaining({
