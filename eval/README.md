@@ -33,15 +33,17 @@ Every expected file must include an `intent` field:
 
 - `false-positive`: the case must not invent risk where none exists
 - `true-positive`: the case must detect the expected real risk signal
-- `shape`: metadata/shape correctness without a precision claim
+- `shape`: metadata/shape correctness without a guard-rate claim
 
 After the per-case table, the runner prints:
 
-- **False-positive avoidance**: passed `false-positive` cases / total `false-positive` cases
-- **True-positive pass rate**: passed `true-positive` cases / total `true-positive` cases
+- **False-positive guards**: passed `false-positive` cases / total `false-positive` cases
+- **True-positive guards**: passed `true-positive` cases / total `true-positive` cases
 - **Overall**: total cases passed
 
 Missing or invalid `intent` values fail the harness.
+
+These are regression guard-case pass rates, not estimates of statistical precision or recall on an independent real-world PR corpus.
 
 ## Current cases
 
@@ -54,8 +56,9 @@ Missing or invalid `intent` values fail the harness.
 - `ci-only`: workflow changes should classify as CI at full presence points, not generic configuration.
 - `rename-only`: pure renames should preserve rename metadata without inflating line counts.
 - `binary-only`: binary assets should be handled safely and treated as low-review-value.
-- `monorepo-package`: nested package manifests should classify as dependency changes, not generic configuration, and should count toward repository evidence. The current baseline also records API area for `packages/api/package.json`; keep that visible until classifier priority is refined.
+- `monorepo-package`: nested package manifests should classify as dependency changes, not API or generic configuration, and should count toward repository evidence.
 - `python-requirements`: Python `requirements.txt` changes should surface dependency risk.
+- `focus-ranking-dogfood`: a large implementation change should rank ahead of light package and build-config changes, matching the failure found by comparing v0.2.1 to v0.3.0.
 - `custom-generated`: configured generated paths should stay low-review-value.
 - `custom-auth-path`: configured auth paths should surface authentication risk.
 - `custom-docs-path`: configured documentation paths should count as docs without production-change guidance.

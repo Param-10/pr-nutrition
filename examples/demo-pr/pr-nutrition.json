@@ -82,16 +82,16 @@
     }
   ],
   "risk": {
-    "score": 43,
-    "level": "medium",
+    "score": 55,
+    "level": "high",
     "reasons": [
       {
         "description": "Touched authentication and security",
         "points": 25
       },
       {
-        "description": "Touched ci and workflows in 1 file, 1 reviewable line",
-        "points": 8
+        "description": "Touched ci and workflows",
+        "points": 20
       },
       {
         "description": "Touched api and public contracts in 1 file, 2 reviewable lines",
@@ -114,6 +114,20 @@
     "hasTestScript": true,
     "hasTypecheckScript": true,
     "hasCiWorkflow": true
+  },
+  "coverage": {
+    "checked": [
+      "Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration",
+      "Generated, low-review-value, test, and docs path heuristics",
+      "Repository evidence: manifests, package manager, scripts, and CI workflow presence",
+      "Git change metadata: paths, rename/copy status, and line counts (not patch contents)"
+    ],
+    "notChecked": [
+      "Diff line contents and semantic correctness",
+      "Vulnerability databases or dependency audit results",
+      "Test execution or CI job outcomes",
+      "LLM review or automated bug finding"
+    ]
   },
   "lowReviewValueFiles": [
     {

@@ -1,6 +1,6 @@
 # PR Nutrition
 
-**Risk:** Medium (43/100)
+**Risk:** High (55/100)
 
 ## Scope
 
@@ -27,7 +27,7 @@
 ## Risk reasons
 
 - Touched authentication and security (+25)
-- Touched ci and workflows in 1 file, 1 reviewable line (+8)
+- Touched ci and workflows (+20)
 - Touched api and public contracts in 1 file, 2 reviewable lines (+5)
 - Touched dependencies in 1 file, 0 reviewable lines (+5)
 
@@ -41,6 +41,22 @@
 - CI workflow: Yes
 - Changed tests: No
 - Changed docs: No
+
+## Coverage
+
+### Checked
+
+- Path risk areas: migrations, authentication, CI, API contracts, dependencies, configuration
+- Generated, low-review-value, test, and docs path heuristics
+- Repository evidence: manifests, package manager, scripts, and CI workflow presence
+- Git change metadata: paths, rename/copy status, and line counts (not patch contents)
+
+### Not checked
+
+- Diff line contents and semantic correctness
+- Vulnerability databases or dependency audit results
+- Test execution or CI job outcomes
+- LLM review or automated bug finding
 
 ## Low review-value files
 

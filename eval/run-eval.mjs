@@ -39,6 +39,7 @@ const CASE_NAMES = [
   "package-docs-false-positive",
   "release-notes-false-positive",
   "python-requirements",
+  "focus-ranking-dogfood",
 ];
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..");
@@ -308,17 +309,21 @@ try {
     return `${passed}/${total} (${percent}%)`;
   }
 
-  const falsePositiveCases = results.filter((result) => result.intent === "false-positive");
-  const truePositiveCases = results.filter((result) => result.intent === "true-positive");
-  const falsePositivePassed = falsePositiveCases.filter((result) => result.failures.length === 0).length;
-  const truePositivePassed = truePositiveCases.filter((result) => result.failures.length === 0).length;
+  const falsePositiveGuardCases = results.filter((result) => result.intent === "false-positive");
+  const truePositiveGuardCases = results.filter((result) => result.intent === "true-positive");
+  const falsePositiveGuardsPassed = falsePositiveGuardCases.filter(
+    (result) => result.failures.length === 0,
+  ).length;
+  const truePositiveGuardsPassed = truePositiveGuardCases.filter(
+    (result) => result.failures.length === 0,
+  ).length;
 
-  process.stdout.write("\nPrecision\n");
+  process.stdout.write("\nGuard-case results\n");
   process.stdout.write(
-    `False-positive avoidance: ${rateLabel(falsePositivePassed, falsePositiveCases.length)}\n`,
+    `False-positive guards: ${rateLabel(falsePositiveGuardsPassed, falsePositiveGuardCases.length)}\n`,
   );
   process.stdout.write(
-    `True-positive pass rate:  ${rateLabel(truePositivePassed, truePositiveCases.length)}\n`,
+    `True-positive guards:  ${rateLabel(truePositiveGuardsPassed, truePositiveGuardCases.length)}\n`,
   );
 
   const failed = results.filter((result) => result.failures.length > 0);

@@ -2,12 +2,32 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
+## 0.3.1 - 2026-08-11
+
+### Added
+
+- Repository evidence and package-manager detection for pip, Pipenv, Bundler, Maven, Gradle, and Composer projects, including shallow workspace roots.
+- A read-only PR policy check that rejects AI-agent co-author trailers and incomplete PR template sections.
+- A dogfood eval case reproducing the v0.2.1-to-v0.3.0 focus-ranking failure.
+- A real-world benchmark guide for analyzing active branches and historical pull requests in other local repositories.
+
+### Fixed
+
+- Light dependency and configuration touches no longer outrank large implementation files in focus groups; presence-sensitive migration, authentication, and CI changes remain review-first.
+- Dependency manifests under generic API directories, such as `packages/api/package.json`, now classify as dependencies.
+- `check` and `doctor` are registered CLI subcommands, so top-level help lists them and `pr-nutrition help check` works.
+
+### Changed
+
+- Eval output and documentation now describe curated guard-case pass rates instead of presenting them as statistical precision.
+- Contributor guidance now calls out the existing Node 24.17.0 pin before running pnpm.
+
 ## 0.3.0 - 2026-08-09
 
 ### Added
 
 - Markdown focus-file groups are capped at 10 entries per group with an `...and N more` line; JSON still returns the full lists.
-- Eval precision reporting: every case has an `intent`, and `pnpm eval` prints false-positive avoidance and true-positive pass rates.
+- Eval guard-case reporting: every case has an `intent`, and `pnpm eval` prints false-positive and true-positive regression pass rates without presenting them as statistical precision.
 - Broader dependency manifests for Python, Ruby, Java/Gradle, and PHP (`requirements.txt`, `Gemfile`, `pom.xml`, `build.gradle`, `composer.json`, and related lockfiles).
 - Shallow monorepo evidence discovery under `packages/*`, `apps/*`, `libs/*`, and `services/*`.
 - Always-on Coverage section in Markdown and JSON describing what was checked and what was not.
