@@ -14,13 +14,14 @@ corepack pnpm test
 corepack pnpm eval
 corepack pnpm typecheck
 corepack pnpm lint
+corepack pnpm policy:check
 corepack pnpm action:bundle-check
 corepack pnpm build
 corepack pnpm smoke
 corepack pnpm release:check
 ```
 
-`pnpm eval` checks deterministic false-positive and rule-regression cases. `pnpm action:bundle-check` verifies that the committed GitHub Action bundle matches the current Action source. `pnpm smoke` verifies both the packed CLI and the committed Action bundle.
+`pnpm eval` checks deterministic false-positive and rule-regression cases. `pnpm policy:check` rejects prohibited AI-agent co-author trailers in the release range; pull-request CI also validates the required PR description sections. `pnpm action:bundle-check` verifies that the committed GitHub Action bundle matches the current Action source. `pnpm smoke` verifies both the packed CLI and the committed Action bundle.
 
 ## Staged npm Publishing
 

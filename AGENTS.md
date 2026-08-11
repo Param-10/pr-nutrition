@@ -75,6 +75,7 @@ pnpm test
 pnpm eval
 pnpm typecheck
 pnpm lint
+pnpm policy:check
 pnpm action:bundle-check
 pnpm build
 pnpm smoke
