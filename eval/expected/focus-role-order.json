@@ -1,0 +1,22 @@
+{
+  "name": "focus-role-order",
+  "intent": "shape",
+  "expectedRiskLevel": "medium",
+  "minScore": 20,
+  "maxScore": 20,
+  "expectedAreas": [],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
+  "expectedEvidence": {
+    "hasChangedTests": true,
+    "hasChangedDocs": true
+  },
+  "expectedFocusFileOrder": {
+    "review-first": [
+      "src/feature.swift",
+      "ExampleAppTests/FeatureTests.swift",
+      "docs/feature.md"
+    ]
+  }
+}

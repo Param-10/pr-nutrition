@@ -40,8 +40,8 @@ function areaReason(
 }
 
 export function calculateRisk(
-  reviewableFiles: number,
-  reviewableLines: number,
+  productionFiles: number,
+  productionLines: number,
   areas: AreaClassification[],
   areaLines: ReadonlyMap<RiskAreaId, number> = new Map(),
 ): { score: number; level: "low" | "medium" | "high"; reasons: RiskReason[] } {
@@ -58,12 +58,12 @@ export function calculateRisk(
     reasons.push(areaReason(definition, magnitude, points));
   }
 
-  if (reviewableFiles >= 30 || reviewableLines >= 800) {
+  if (productionFiles >= 30 || productionLines >= 800) {
+    rawScore += 50;
+    reasons.push({ description: "Production size: at least 30 files or 800 lines", points: 50 });
+  } else if (productionFiles >= 10 || productionLines >= 200) {
     rawScore += 20;
-    reasons.push({ description: "Size: at least 30 files or 800 lines", points: 20 });
-  } else if (reviewableFiles >= 10 || reviewableLines >= 200) {
-    rawScore += 10;
-    reasons.push({ description: "Size: at least 10 files or 200 lines", points: 10 });
+    reasons.push({ description: "Production size: at least 10 files or 200 lines", points: 20 });
   }
 
   const score = Math.min(rawScore, 100);

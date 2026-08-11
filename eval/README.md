@@ -59,6 +59,13 @@ These are regression guard-case pass rates, not estimates of statistical precisi
 - `monorepo-package`: nested package manifests should classify as dependency changes, not API or generic configuration, and should count toward repository evidence.
 - `python-requirements`: Python `requirements.txt` changes should surface dependency risk.
 - `focus-ranking-dogfood`: a large implementation change should rank ahead of light package and build-config changes, matching the failure found by comparing v0.2.1 to v0.3.0.
+- `focus-role-order`: implementation should rank ahead of larger test and documentation files.
+- `xcode-tests`: conventional Xcode unit-test and UI-test target folders should count as changed tests.
+- `xcode-test-name-near-miss`: unrelated names such as `ContestSupport` and `Latest` must not count as test folders.
+- `cobol-production`: `.cob` production changes should trigger missing-test guidance when no tests changed.
+- `cobol-docs-near-miss`: COBOL examples under documentation must not trigger production-change guidance.
+- `production-size`: an 800-line production change should reach high risk from review scope alone.
+- `verification-size-near-miss`: large test and documentation changes must not inflate production size risk.
 - `custom-generated`: configured generated paths should stay low-review-value.
 - `custom-auth-path`: configured auth paths should surface authentication risk.
 - `custom-docs-path`: configured documentation paths should count as docs without production-change guidance.

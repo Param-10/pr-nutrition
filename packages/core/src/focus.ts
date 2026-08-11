@@ -1,4 +1,4 @@
-import { RISK_AREAS, riskAreaPriority } from "./classifier.js";
+import { isDocFile, isTestFile, RISK_AREAS, riskAreaPriority } from "./classifier.js";
 import { LOW_VALUE_DEPENDENCY_FILE_NAMES } from "./dependency-files.js";
 import { MODERATE_MAX_LINES, magnitudeBand } from "./scorer.js";
 import type { AreaClassification, ChangedFile, FocusFile, FocusFileGroup, RiskAreaId } from "./types.js";
@@ -24,6 +24,12 @@ const SKIM_REASON_ORDER = new Map([
 
 function reviewableLineCount(file: ChangedFile): number {
   return file.isLowValue ? 0 : file.additions + file.deletions;
+}
+
+function reviewRolePriority(path: string): number {
+  if (isTestFile(path)) return 1;
+  if (isDocFile(path)) return 2;
+  return 0;
 }
 
 function buildAreaByPath(areas: AreaClassification[]): Map<string, RiskAreaId> {
@@ -126,16 +132,22 @@ export function buildFocusFileGroups(
     return left.path.localeCompare(right.path);
   };
 
+  const byReviewRoleThenLinesThenPath = (left: FocusFile, right: FocusFile): number => {
+    const roleDifference = reviewRolePriority(left.path) - reviewRolePriority(right.path);
+    if (roleDifference !== 0) return roleDifference;
+    return byReviewableLinesThenPath(left, right);
+  };
+
   reviewFirst.sort((left, right) => {
     const leftArea = left.area;
     const rightArea = right.area;
     const leftPriority = leftArea === undefined ? Number.MAX_SAFE_INTEGER : riskAreaPriority(leftArea);
     const rightPriority = rightArea === undefined ? Number.MAX_SAFE_INTEGER : riskAreaPriority(rightArea);
     if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-    return byReviewableLinesThenPath(left, right);
+    return byReviewRoleThenLinesThenPath(left, right);
   });
 
-  reviewNormally.sort(byReviewableLinesThenPath);
+  reviewNormally.sort(byReviewRoleThenLinesThenPath);
   skim.sort((left, right) => {
     const leftOrder = SKIM_REASON_ORDER.get(left.reason) ?? Number.MAX_SAFE_INTEGER;
     const rightOrder = SKIM_REASON_ORDER.get(right.reason) ?? Number.MAX_SAFE_INTEGER;

@@ -2,6 +2,25 @@
 
 All notable changes to PR Nutrition are documented in this file.
 
+## 0.4.0 - 2026-08-11
+
+### Added
+
+- A 33-PR local development benchmark across six repositories and Swift/iOS, Python/TypeScript, and COBOL projects, with labels written separately from analyzer output.
+- Positive and near-miss eval cases for Xcode test targets, COBOL production changes, production-only size risk, verification-only size changes, and implementation-first focus ordering.
+- Ordered focus assertions in the eval harness, expanding the permanent corpus from 25 to 32 cases.
+
+### Fixed
+
+- Large test and documentation files no longer outrank implementation solely because they contain more changed lines.
+- Conventional Xcode test-target folders such as `AppTests` and `AppUITests` now count as changed tests without matching unrelated names such as `ContestSupport` or `Latest`.
+- `.cob` production files now participate in missing-test guidance while documentation examples remain excluded.
+
+### Changed
+
+- Overall size risk now counts production files and lines instead of tests and documentation. Ten production files or 200 production lines add 20 points; 30 production files or 800 production lines add 50 points.
+- The development benchmark improved from 21/33 to 33/33 exact risk bands, 27/33 to 33/33 focus-order checks, and 25/33 to 33/33 test-warning checks. These are calibration-set pass rates, not statistical precision or recall.
+
 ## 0.3.1 - 2026-08-11
 
 ### Added

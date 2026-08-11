@@ -33,11 +33,11 @@ const fullResult: AnalysisResult = {
     { id: 'authentication', label: 'Authentication and security', files: ['src/auth/session.ts'] }
   ],
   risk: {
-    score: 35,
+    score: 45,
     level: 'medium',
     reasons: [
       { description: 'Authentication/security logic changed', points: 25 },
-      { description: 'Size: 10+ reviewable files or 200+ reviewable lines', points: 10 }
+      { description: 'Production size: at least 10 files or 200 lines', points: 20 }
     ]
   },
   evidence: {

@@ -1,0 +1,15 @@
+{
+  "name": "verification-size-near-miss",
+  "intent": "false-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
+  "expectedEvidence": {
+    "hasChangedDocs": true,
+    "hasChangedTests": true
+  }
+}

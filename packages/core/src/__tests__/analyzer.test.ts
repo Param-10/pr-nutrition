@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { analyzePullRequest } from "../analyzer.js";
-import { getRiskArea, isDocFile, isTestFile } from "../classifier.js";
+import { getRiskArea, isDocFile, isTestFile, isTestRelevantFile } from "../classifier.js";
 import { buildCoverage } from "../coverage.js";
 import { buildFocusFileGroups } from "../focus.js";
 import { calculateRisk } from "../scorer.js";
@@ -512,6 +512,38 @@ describe("core analyzer", () => {
     expect(result.warnings).toEqual([]);
   });
 
+  it("keeps test- and documentation-only volume out of the overall size risk", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "verification"]);
+    write(repoPath, "docs/review.md", "documentation\n".repeat(300));
+    write(repoPath, "ExampleAppTests/LargeFeatureTests.swift", "test assertion\n".repeat(900));
+    commit(repoPath, "verification only");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "verification" });
+
+    expect(result.summary.reviewableLines).toBeGreaterThan(800);
+    expect(result.evidence.hasChangedTests).toBe(true);
+    expect(result.evidence.hasChangedDocs).toBe(true);
+    expect(result.risk).toMatchObject({ score: 0, level: "low" });
+  });
+
+  it("warns when COBOL production changes have no changed tests", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "README.md", "base\n");
+    commit(repoPath, "base");
+    git(repoPath, ["checkout", "-b", "cobol-feature"]);
+    write(repoPath, "src/InCollege.cob", "       IDENTIFICATION DIVISION.\n");
+    commit(repoPath, "cobol feature");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "cobol-feature" });
+
+    expect(result.reviewFocus).toContain(
+      "Production changes detected without changed tests; verify coverage.",
+    );
+  });
+
   it("caps review focus at five deterministic priority items", async () => {
     const repoPath = createRepository();
     write(repoPath, "README.md", "base\n");
@@ -551,6 +583,19 @@ describe("core analyzer", () => {
 });
 
 describe("built-in risk classification precedence", () => {
+  it("recognizes Xcode test targets without matching unrelated path names", () => {
+    expect(isTestFile("Calma/CalmaTests/PaletteTests.swift")).toBe(true);
+    expect(isTestFile("Calma/CalmaUITests/ReleaseSmokeUITests.swift")).toBe(true);
+    expect(isTestFile("src/ContestSupport/Results.swift")).toBe(false);
+    expect(isTestFile("src/Latest/Version.swift")).toBe(false);
+  });
+
+  it("treats COBOL source, but not COBOL-looking documentation, as test-relevant", () => {
+    expect(isTestRelevantFile("src/InCollege.cob")).toBe(true);
+    expect(isTestRelevantFile("docs/example.cob")).toBe(false);
+    expect(isTestRelevantFile("README.cobol")).toBe(false);
+  });
+
   it("does not classify documentation paths as production risk solely from risky words", () => {
     expect(isDocFile("docs/api/reference.md")).toBe(true);
     expect(isDocFile("docs/migrations/guide.md")).toBe(true);
@@ -687,6 +732,47 @@ describe("built-in risk classification precedence", () => {
     ]);
   });
 
+  it("orders production files before larger tests and documentation", () => {
+    const groups = buildFocusFileGroups(
+      [
+        {
+          path: "docs/implementation.md",
+          status: "modified",
+          additions: 500,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+        {
+          path: "ExampleAppTests/ImplementationTests.swift",
+          status: "modified",
+          additions: 400,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+        {
+          path: "src/implementation.swift",
+          status: "modified",
+          additions: 300,
+          deletions: 0,
+          isBinary: false,
+          isGenerated: false,
+          isLowValue: false,
+        },
+      ],
+      [],
+    );
+
+    expect(groups.find((group) => group.title === "review-first")?.files.map((file) => file.path)).toEqual([
+      "src/implementation.swift",
+      "ExampleAppTests/ImplementationTests.swift",
+      "docs/implementation.md",
+    ]);
+  });
+
   it("sorts review-normally by reviewable lines without quadratic path lookups", () => {
     const files = Array.from({ length: 40 }, (_, index) => ({
       path: `src/lib/module-${String(index).padStart(2, "0")}.ts`,
@@ -778,9 +864,9 @@ describe("risk scoring boundaries", () => {
 
   it("applies exactly one size band", () => {
     expect(calculateRisk(9, 199, [])).toMatchObject({ score: 0, level: "low" });
-    expect(calculateRisk(10, 0, [])).toMatchObject({ score: 10, level: "low" });
-    expect(calculateRisk(0, 200, [])).toMatchObject({ score: 10, level: "low" });
-    expect(calculateRisk(30, 0, [])).toMatchObject({ score: 20, level: "medium" });
-    expect(calculateRisk(0, 800, [])).toMatchObject({ score: 20, level: "medium" });
+    expect(calculateRisk(10, 0, [])).toMatchObject({ score: 20, level: "medium" });
+    expect(calculateRisk(0, 200, [])).toMatchObject({ score: 20, level: "medium" });
+    expect(calculateRisk(30, 0, [])).toMatchObject({ score: 50, level: "high" });
+    expect(calculateRisk(0, 800, [])).toMatchObject({ score: 50, level: "high" });
   });
 });

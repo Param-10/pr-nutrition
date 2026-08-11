@@ -21177,7 +21177,7 @@ var RISK_AREAS = [
 function isTestFile(path) {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
-  return /(^|\/)__tests__(\/|$)/.test(lowerPath) || /(^|\/)tests?(\/|$)/.test(lowerPath) || /\.(test|spec)\.[^/]+$/.test(lowerPath) || /(^test_.*|.*_test)\.(py|go)$/.test(name);
+  return /(^|\/)[^/]+(?:UI)?Tests(\/|$)/.test(path) || /(^|\/)__tests__(\/|$)/.test(lowerPath) || /(^|\/)tests?(\/|$)/.test(lowerPath) || /\.(test|spec)\.[^/]+$/.test(lowerPath) || /(^test_.*|.*_test)\.(py|go)$/.test(name);
 }
 function isDocFile(path) {
   const lowerPath = path.toLowerCase();
@@ -21197,7 +21197,7 @@ function isLowValueFile(path) {
 function isTestRelevantFile(path) {
   if (isTestFile(path) || isDocFile(path)) return false;
   const lowerPath = path.toLowerCase();
-  return /(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath) || /\.(c|cc|cpp|cs|go|java|js|jsx|php|py|rb|rs|sql|swift|ts|tsx)$/.test(lowerPath);
+  return /(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath) || /\.(c|cc|cob|cpp|cs|go|java|js|jsx|php|py|rb|rs|sql|swift|ts|tsx)$/.test(lowerPath);
 }
 var RISK_AREA_PRIORITY = new Map(
   RISK_AREAS.map((definition, index) => [definition.id, index])
@@ -21768,7 +21768,7 @@ function areaReason(definition, magnitude, points) {
   const scope = definition.magnitudePoints === void 0 ? "" : ` in ${countLabel(magnitude.files, "file")}, ${countLabel(magnitude.lines, "reviewable line")}`;
   return { description: `Touched ${definition.label.toLowerCase()}${scope}`, points };
 }
-function calculateRisk(reviewableFiles, reviewableLines, areas, areaLines = /* @__PURE__ */ new Map()) {
+function calculateRisk(productionFiles, productionLines, areas, areaLines = /* @__PURE__ */ new Map()) {
   let rawScore = 0;
   const reasons = [];
   const areaFileCounts = new Map(areas.map((area) => [area.id, area.files.length]));
@@ -21780,12 +21780,12 @@ function calculateRisk(reviewableFiles, reviewableLines, areas, areaLines = /* @
     rawScore += points;
     reasons.push(areaReason(definition, magnitude, points));
   }
-  if (reviewableFiles >= 30 || reviewableLines >= 800) {
+  if (productionFiles >= 30 || productionLines >= 800) {
+    rawScore += 50;
+    reasons.push({ description: "Production size: at least 30 files or 800 lines", points: 50 });
+  } else if (productionFiles >= 10 || productionLines >= 200) {
     rawScore += 20;
-    reasons.push({ description: "Size: at least 30 files or 800 lines", points: 20 });
-  } else if (reviewableFiles >= 10 || reviewableLines >= 200) {
-    rawScore += 10;
-    reasons.push({ description: "Size: at least 10 files or 200 lines", points: 10 });
+    reasons.push({ description: "Production size: at least 10 files or 200 lines", points: 20 });
   }
   const score = Math.min(rawScore, 100);
   const level = score >= 50 ? "high" : score >= 20 ? "medium" : "low";
@@ -21809,6 +21809,11 @@ var SKIM_REASON_ORDER = /* @__PURE__ */ new Map([
 ]);
 function reviewableLineCount(file) {
   return file.isLowValue ? 0 : file.additions + file.deletions;
+}
+function reviewRolePriority(path) {
+  if (isTestFile(path)) return 1;
+  if (isDocFile(path)) return 2;
+  return 0;
 }
 function buildAreaByPath(areas) {
   const areaByPath = /* @__PURE__ */ new Map();
@@ -21890,15 +21895,20 @@ function buildFocusFileGroups(files, areas) {
     if (leftLines !== rightLines) return rightLines - leftLines;
     return left.path.localeCompare(right.path);
   };
+  const byReviewRoleThenLinesThenPath = (left, right) => {
+    const roleDifference = reviewRolePriority(left.path) - reviewRolePriority(right.path);
+    if (roleDifference !== 0) return roleDifference;
+    return byReviewableLinesThenPath(left, right);
+  };
   reviewFirst.sort((left, right) => {
     const leftArea = left.area;
     const rightArea = right.area;
     const leftPriority = leftArea === void 0 ? Number.MAX_SAFE_INTEGER : riskAreaPriority(leftArea);
     const rightPriority = rightArea === void 0 ? Number.MAX_SAFE_INTEGER : riskAreaPriority(rightArea);
     if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-    return byReviewableLinesThenPath(left, right);
+    return byReviewRoleThenLinesThenPath(left, right);
   });
-  reviewNormally.sort(byReviewableLinesThenPath);
+  reviewNormally.sort(byReviewRoleThenLinesThenPath);
   skim.sort((left, right) => {
     const leftOrder = SKIM_REASON_ORDER.get(left.reason) ?? Number.MAX_SAFE_INTEGER;
     const rightOrder = SKIM_REASON_ORDER.get(right.reason) ?? Number.MAX_SAFE_INTEGER;
@@ -22068,12 +22078,17 @@ async function analyzePullRequest(options) {
   let deletions = 0;
   let reviewableFiles = 0;
   let reviewableLines = 0;
+  let productionFiles = 0;
+  let productionLines = 0;
   let hasTestRelevantChanges = false;
   const files = gitDiff.files.map((gitFile) => {
     const isGenerated = gitFile.isGenerated || isGeneratedFile(gitFile.path) || configMatcher.isGenerated(gitFile.path);
     const isLowValue = isGenerated || gitFile.isBinary || isLowValueFile(gitFile.path) || configMatcher.isLowReviewValue(gitFile.path);
     const file = { ...gitFile, isGenerated, isLowValue };
     const classificationPaths = [file.path, ...file.previousPath === void 0 ? [] : [file.previousPath]];
+    const isTestOrDoc = classificationPaths.every(
+      (path) => isTestFile(path) || configMatcher.isTest(path) || isDocFile(path) || configMatcher.isDoc(path)
+    );
     additions += file.additions;
     deletions += file.deletions;
     if (isLowValue) {
@@ -22081,6 +22096,10 @@ async function analyzePullRequest(options) {
     } else {
       reviewableFiles++;
       reviewableLines += file.additions + file.deletions;
+      if (!isTestOrDoc) {
+        productionFiles++;
+        productionLines += file.additions + file.deletions;
+      }
     }
     evidence.hasChangedTests ||= classificationPaths.some(
       (path) => isTestFile(path) || configMatcher.isTest(path)
@@ -22102,7 +22121,7 @@ async function analyzePullRequest(options) {
     return file;
   });
   const areas = buildAreas(areaFiles);
-  const risk = calculateRisk(reviewableFiles, reviewableLines, areas, areaLines);
+  const risk = calculateRisk(productionFiles, productionLines, areas, areaLines);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
   return {
     schemaVersion: 1,
