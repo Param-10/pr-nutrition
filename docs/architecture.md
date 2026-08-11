@@ -45,6 +45,8 @@ An area contributes points once, no matter how many files matched it. Most scale
 
 Bands use reviewable lines, so generated files and lockfiles contribute zero regardless of their diff size.
 
+Overall change size is scored separately from area magnitude. It counts production files and lines, excluding tests, documentation, generated files, lockfiles, binaries, and configured low-review-value paths. Ten production files or 200 production lines add 20 points; 30 production files or 800 production lines add 50 points.
+
 Migrations, authentication, and CI opt out of banding and always score full points. There the existence of the change is the signal rather than its size: a one-line migration can drop a table, a two-line auth change can invert a permission check, and a one-line workflow edit can weaken a required gate. An area opts into banding by declaring `magnitudePoints` in `RISK_AREAS`.
 
 ## GitHub Action Boundary

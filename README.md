@@ -113,9 +113,9 @@ High:   50–100
 
 An area contributes points once, no matter how many files matched it. API, dependency, and configuration points scale with how much changed in that area, so a one-line lockfile bump does not score like a dependency overhaul. Migrations, authentication, and CI always score their full value, because a single line in any of those can drop a table, invert a permission check, or weaken a required gate.
 
-Scaling uses reviewable lines, so generated files and lockfiles do not inflate an area regardless of how large their diff looks.
+Area scaling uses reviewable lines, so generated files and lockfiles do not inflate an area regardless of how large their diff looks.
 
-Tests and docs affect the review guidance, but they do not reduce the risk score. A risky change is still risky even if tests were added.
+Overall size risk uses production files and lines: tests and docs still affect review guidance, but they do not make a documentation- or test-only PR risky. A production change at 10 files or 200 lines adds 20 points; at 30 files or 800 lines it adds 50 points. Tests and docs never subtract points from an independently risky change.
 
 ---
 
@@ -135,13 +135,13 @@ npm install -g pr-nutrition
 pr-nutrition
 ```
 
-Current stable npm release: `pr-nutrition@0.3.1`.
+Current stable npm release: `pr-nutrition@0.4.0`.
 Previous release: `pr-nutrition@0.3.0`.
 
 ```bash
-npx pr-nutrition@0.3.1
-npx pr-nutrition@0.3.1 --help
-npx pr-nutrition@0.3.1 doctor
+npx pr-nutrition@0.4.0
+npx pr-nutrition@0.4.0 --help
+npx pr-nutrition@0.4.0 doctor
 ```
 
 ---
@@ -204,7 +204,7 @@ Options:
 | `--focus-files`             |    `false` | Add deterministic file review priority groups |
 | `--fail-on <low\|medium\|high>` | unset | Exit `3` when risk level meets or exceeds the threshold |
 
-The `--json` shortcut is available in the current stable `0.3.1` release.
+The `--json` shortcut is available in the current stable `0.4.0` release.
 
 ### Pre-PR check
 
@@ -226,7 +226,7 @@ Exit codes:
 
 ### Configuration
 
-Configuration support is available in the current stable `0.3.1` release.
+Configuration support is available in the current stable `0.4.0` release.
 
 PR Nutrition automatically looks for `.pr-nutrition.json` at the repository root. Configuration extends the built-in classification with repository-specific paths; it never weakens built-in protections, removes risk categories, hides files, or changes risk weights, thresholds, or scoring.
 
@@ -256,7 +256,7 @@ Rules:
 
 ### Explanation
 
-Explain output is available in the current stable `0.3.1` release.
+Explain output is available in the current stable `0.4.0` release.
 
 `--explain` adds a deterministic account of why each file was classified. It works with both Markdown and JSON output and never changes default output when it is not passed.
 
@@ -298,7 +298,7 @@ JSON shape with `--json --explain`:
 
 ### Focus files
 
-Focus file output is available in the current stable `0.3.1` release.
+Focus file output is available in the current stable `0.4.0` release.
 
 `--focus-files` adds a compact reviewer workflow that separates changed files into:
 
@@ -312,7 +312,7 @@ The grouping uses existing deterministic classification data: risk areas, genera
 
 ### Doctor
 
-Doctor output is available in the current stable `0.3.1` release.
+Doctor output is available in the current stable `0.4.0` release.
 
 `pr-nutrition doctor` diagnoses whether PR Nutrition can run in the current repository. It checks Git availability, worktree detection, refs, merge-base availability, config loading, shallow repository status, and safe repository evidence.
 
@@ -367,7 +367,7 @@ Use exact base and head commit SHAs for historical pull requests, then save JSON
 
 ## GitHub Action
 
-Current Action tag: `Param-10/pr-nutrition@v0.3.1`.
+Current Action tag: `Param-10/pr-nutrition@v0.4.0`.
 
 Use the released Action tag with a read-only token and full-history checkout:
 
@@ -381,7 +381,7 @@ steps:
       fetch-depth: 0
 
   - id: nutrition
-    uses: Param-10/pr-nutrition@v0.3.1
+    uses: Param-10/pr-nutrition@v0.4.0
 ```
 
 The Action is read-only, requires only `contents: read`, does not call the GitHub API, and does not post PR comments.

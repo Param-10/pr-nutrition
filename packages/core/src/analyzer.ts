@@ -42,6 +42,8 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   let deletions = 0;
   let reviewableFiles = 0;
   let reviewableLines = 0;
+  let productionFiles = 0;
+  let productionLines = 0;
   let hasTestRelevantChanges = false;
 
   const files = gitDiff.files.map((gitFile): ChangedFile => {
@@ -54,6 +56,13 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
       configMatcher.isLowReviewValue(gitFile.path);
     const file = { ...gitFile, isGenerated, isLowValue };
     const classificationPaths = [file.path, ...(file.previousPath === undefined ? [] : [file.previousPath])];
+    const isTestOrDoc = classificationPaths.every(
+      (path) =>
+        isTestFile(path) ||
+        configMatcher.isTest(path) ||
+        isDocFile(path) ||
+        configMatcher.isDoc(path),
+    );
 
     additions += file.additions;
     deletions += file.deletions;
@@ -62,6 +71,10 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
     } else {
       reviewableFiles++;
       reviewableLines += file.additions + file.deletions;
+      if (!isTestOrDoc) {
+        productionFiles++;
+        productionLines += file.additions + file.deletions;
+      }
     }
 
     evidence.hasChangedTests ||= classificationPaths.some(
@@ -91,7 +104,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<Analy
   });
 
   const areas = buildAreas(areaFiles);
-  const risk = calculateRisk(reviewableFiles, reviewableLines, areas, areaLines);
+  const risk = calculateRisk(productionFiles, productionLines, areas, areaLines);
   const reviewFocus = buildReviewFocus(areas, hasTestRelevantChanges && !evidence.hasChangedTests);
 
   return {

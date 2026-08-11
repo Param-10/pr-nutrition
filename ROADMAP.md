@@ -48,9 +48,20 @@ PR Nutrition's center of gravity is a local-first PR triage CLI. CI and GitHub A
 - [x] discoverable `check` and `doctor` CLI subcommands
 - [x] supported local Node pin and enforced PR authoring policy
 
-## Next
-- build a locally labeled corpus from real PR path metadata using the [real-world benchmark guide](docs/real-world-benchmark.md) before claiming precision or recall
-- add richer framework, infrastructure, and generated-file rules only with positive and near-miss cases
+## v0.4.0 - benchmark-calibrated accuracy
+- [x] label and analyze 33 real local PRs across six repositories without reading patch contents
+- [x] separate production size risk from test and documentation volume
+- [x] rank implementation ahead of larger tests and docs while preserving risk-area priority
+- [x] recognize conventional Xcode test targets and COBOL production changes
+- [x] add positive and near-miss guards for every new rule
+- [x] document calibration-set results without claiming statistical precision or recall
+
+## Immediate next five
+1. Validate against a held-out set of 25–50 PRs from repositories not used for v0.4.0 calibration; publish the labeling and comparison method before using precision or recall terminology.
+2. Add exact production file/line counts to the public result model and renderers so every size-risk point is directly explainable.
+3. Make focus ordering honor configured custom test and documentation paths, not only built-in path heuristics.
+4. Expand infrastructure and generated-file rules only for repeated held-out misses, always with a positive case and a near-miss case.
+5. Run short reviewer usability sessions and capture false-positive reports through the existing issue template; prioritize changes that reduce review work without adding notifications or write permissions.
 
 ## Later
 - optional LLM wording polish

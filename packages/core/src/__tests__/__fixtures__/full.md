@@ -1,6 +1,6 @@
 # PR Nutrition
 
-**Risk:** Medium (35/100)
+**Risk:** Medium (45/100)
 
 ## Scope
 
@@ -21,7 +21,7 @@
 ## Risk reasons
 
 - Authentication/security logic changed (+25)
-- Size: 10+ reviewable files or 200+ reviewable lines (+10)
+- Production size: at least 10 files or 200 lines (+20)
 
 ## Repository evidence
 

@@ -1,0 +1,14 @@
+{
+  "name": "xcode-tests",
+  "intent": "true-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustNotIncludeFocus": [
+    "production changes without changed tests"
+  ],
+  "expectedEvidence": {
+    "hasChangedTests": true
+  }
+}

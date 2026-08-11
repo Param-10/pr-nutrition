@@ -40,6 +40,13 @@ const CASE_NAMES = [
   "release-notes-false-positive",
   "python-requirements",
   "focus-ranking-dogfood",
+  "focus-role-order",
+  "xcode-tests",
+  "xcode-test-name-near-miss",
+  "cobol-production",
+  "cobol-docs-near-miss",
+  "production-size",
+  "verification-size-near-miss",
 ];
 
 const workspaceRoot = path.resolve(import.meta.dirname, "..");
@@ -244,6 +251,20 @@ function assertExpected(caseName, result, expected) {
     );
   }
 
+  for (const [title, expectedPaths] of Object.entries(expected.expectedFocusFileOrder ?? {})) {
+    const actualGroup = result.focusFiles?.find((group) => group.title === title);
+    if (actualGroup === undefined) {
+      failures.push(`focusFiles.${title}: expected focus group to be present`);
+      continue;
+    }
+    assertEqual(
+      failures,
+      `focusFiles.${title}.order`,
+      actualGroup.files.map((file) => file.path),
+      expectedPaths,
+    );
+  }
+
   return failures;
 }
 
@@ -279,7 +300,10 @@ try {
       headRef: "HEAD",
       ...(config === undefined ? {} : { config }),
       ...(evalCase.expected.expectedExplanations === undefined ? {} : { explain: true }),
-      ...(evalCase.expected.expectedFocusFiles === undefined ? {} : { focusFiles: true }),
+      ...(evalCase.expected.expectedFocusFiles === undefined &&
+      evalCase.expected.expectedFocusFileOrder === undefined
+        ? {}
+        : { focusFiles: true }),
     });
     const failures = assertExpected(evalCase.name, analysis, evalCase.expected);
     results.push({

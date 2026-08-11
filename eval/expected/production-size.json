@@ -1,0 +1,11 @@
+{
+  "name": "production-size",
+  "intent": "true-positive",
+  "expectedRiskLevel": "high",
+  "minScore": 50,
+  "maxScore": 50,
+  "expectedAreas": [],
+  "mustIncludeFocus": [
+    "production changes detected without changed tests"
+  ]
+}

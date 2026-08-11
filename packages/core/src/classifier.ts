@@ -134,6 +134,7 @@ export function isTestFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
   return (
+    /(^|\/)[^/]+(?:UI)?Tests(\/|$)/.test(path) ||
     /(^|\/)__tests__(\/|$)/.test(lowerPath) ||
     /(^|\/)tests?(\/|$)/.test(lowerPath) ||
     /\.(test|spec)\.[^/]+$/.test(lowerPath) ||
@@ -178,7 +179,7 @@ export function isTestRelevantFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return (
     /(^|\/)(migrations|db\/migrate)(\/|$)/.test(lowerPath) ||
-    /\.(c|cc|cpp|cs|go|java|js|jsx|php|py|rb|rs|sql|swift|ts|tsx)$/.test(lowerPath)
+    /\.(c|cc|cob|cpp|cs|go|java|js|jsx|php|py|rb|rs|sql|swift|ts|tsx)$/.test(lowerPath)
   );
 }
 

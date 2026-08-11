@@ -1,0 +1,14 @@
+{
+  "name": "cobol-production",
+  "intent": "true-positive",
+  "expectedRiskLevel": "low",
+  "minScore": 0,
+  "maxScore": 0,
+  "expectedAreas": [],
+  "mustIncludeFocus": [
+    "production changes detected without changed tests"
+  ],
+  "expectedEvidence": {
+    "hasChangedTests": false
+  }
+}
