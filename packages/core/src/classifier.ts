@@ -1,44 +1,5 @@
 import type { RiskAreaId } from "./types.js";
-
-const DEPENDENCY_FILE_NAMES = new Set([
-  "build.gradle",
-  "build.gradle.kts",
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "cargo.toml",
-  "composer.json",
-  "composer.lock",
-  "gemfile",
-  "gemfile.lock",
-  "go.mod",
-  "go.sum",
-  "package-lock.json",
-  "package.json",
-  "pipfile",
-  "pipfile.lock",
-  "pnpm-lock.yaml",
-  "poetry.lock",
-  "pom.xml",
-  "pyproject.toml",
-  "requirements.txt",
-  "uv.lock",
-  "yarn.lock",
-]);
-
-const LOW_VALUE_FILE_NAMES = new Set([
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "composer.lock",
-  "gemfile.lock",
-  "package-lock.json",
-  "pipfile.lock",
-  "pnpm-lock.yaml",
-  "poetry.lock",
-  "uv.lock",
-  "yarn.lock",
-]);
+import { DEPENDENCY_FILE_NAMES, LOW_VALUE_DEPENDENCY_FILE_NAMES } from "./dependency-files.js";
 
 const AUTH_DIRECTORY_NAMES = new Set([
   "auth",
@@ -206,7 +167,7 @@ export function isLowValueFile(path: string): boolean {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
   return (
-    LOW_VALUE_FILE_NAMES.has(name) ||
+    LOW_VALUE_DEPENDENCY_FILE_NAMES.has(name) ||
     /(^|\/)(__snapshots__|vendor)(\/|$)/.test(lowerPath) ||
     /\.(gif|jpe?g|lock|map|png|snap|svg|webp)$/.test(lowerPath)
   );
@@ -287,11 +248,11 @@ export function getRiskArea(path: string): RiskAreaId | undefined {
   if (/(^|\/)(\.github\/workflows|\.circleci)(\/|$)/.test(lowerPath) || /(^|\/)\.gitlab-ci\.yml$/.test(lowerPath)) {
     return "ci";
   }
-  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
-    return "api";
-  }
   if (DEPENDENCY_FILE_NAMES.has(name)) {
     return "dependencies";
+  }
+  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
+    return "api";
   }
   if (hasDirectory(lowerPath, CONFIGURATION_DIRECTORY_NAMES) || isConfigurationFile(lowerPath, name)) {
     return "configuration";

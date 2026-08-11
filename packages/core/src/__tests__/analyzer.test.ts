@@ -397,6 +397,37 @@ describe("core analyzer", () => {
     expect(result.evidence.packageManager).toBe("pnpm");
   });
 
+  it.each([
+    ["requirements.txt", "pip"],
+    ["Pipfile", "pipenv"],
+    ["Gemfile", "bundler"],
+    ["pom.xml", "maven"],
+    ["build.gradle", "gradle"],
+    ["build.gradle.kts", "gradle"],
+    ["composer.json", "composer"],
+  ] as const)("detects %s repository evidence", async (manifest, packageManager) => {
+    const repoPath = createRepository();
+    write(repoPath, manifest, "dependency manifest\n");
+    commit(repoPath, "ecosystem manifest");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "main" });
+
+    expect(result.evidence.hasPackageManifest).toBe(true);
+    expect(result.evidence.manifests).toEqual([manifest]);
+    expect(result.evidence.packageManager).toBe(packageManager);
+  });
+
+  it("detects non-JavaScript manifests in shallow workspace roots", async () => {
+    const repoPath = createRepository();
+    write(repoPath, "services/payments/composer.json", "{}\n");
+    commit(repoPath, "nested composer manifest");
+
+    const result = await analyzePullRequest({ repoPath, baseRef: "main", headRef: "main" });
+
+    expect(result.evidence.manifests).toEqual(["services/payments/composer.json"]);
+    expect(result.evidence.packageManager).toBe("composer");
+  });
+
   it("warns about malformed package.json instead of failing", async () => {
     const repoPath = createRepository();
     write(repoPath, "package.json", "{invalid");
@@ -515,6 +546,7 @@ describe("built-in risk classification precedence", () => {
     expect(getRiskArea("build.gradle")).toBe("dependencies");
     expect(getRiskArea("build.gradle.kts")).toBe("dependencies");
     expect(getRiskArea("composer.json")).toBe("dependencies");
+    expect(getRiskArea("packages/api/package.json")).toBe("dependencies");
     expect(getRiskArea(".env.example")).toBe("configuration");
     expect(getRiskArea("config/runtime.json")).toBe("configuration");
   });

@@ -25,7 +25,21 @@ export interface ChangedFile {
   isLowValue: boolean;
 }
 
-export type PackageManager = "npm" | "yarn" | "pnpm" | "uv" | "poetry" | "cargo" | "go" | "unknown";
+export type PackageManager =
+  | "npm"
+  | "yarn"
+  | "pnpm"
+  | "pip"
+  | "pipenv"
+  | "uv"
+  | "poetry"
+  | "bundler"
+  | "maven"
+  | "gradle"
+  | "composer"
+  | "cargo"
+  | "go"
+  | "unknown";
 
 export interface RepositoryEvidence {
   hasChangedTests: boolean;

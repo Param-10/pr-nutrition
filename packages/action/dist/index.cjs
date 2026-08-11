@@ -21017,44 +21017,60 @@ var import_picomatch = __toESM(require_picomatch2(), 1);
 var import_fs3 = require("fs");
 var import_path3 = require("path");
 var import_child_process = require("child_process");
-var DEPENDENCY_FILE_NAMES = /* @__PURE__ */ new Set([
+var DEPENDENCY_MANIFEST_FILE_NAMES = [
   "build.gradle",
   "build.gradle.kts",
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "cargo.toml",
+  "Cargo.toml",
   "composer.json",
-  "composer.lock",
-  "gemfile",
-  "gemfile.lock",
+  "Gemfile",
   "go.mod",
-  "go.sum",
-  "package-lock.json",
   "package.json",
-  "pipfile",
-  "pipfile.lock",
-  "pnpm-lock.yaml",
-  "poetry.lock",
+  "Pipfile",
   "pom.xml",
   "pyproject.toml",
-  "requirements.txt",
-  "uv.lock",
-  "yarn.lock"
-]);
-var LOW_VALUE_FILE_NAMES = /* @__PURE__ */ new Set([
+  "requirements.txt"
+];
+var DEPENDENCY_LOCK_FILE_NAMES = [
   "bun.lock",
   "bun.lockb",
-  "cargo.lock",
+  "Cargo.lock",
   "composer.lock",
-  "gemfile.lock",
+  "Gemfile.lock",
+  "go.sum",
   "package-lock.json",
-  "pipfile.lock",
+  "Pipfile.lock",
   "pnpm-lock.yaml",
   "poetry.lock",
   "uv.lock",
   "yarn.lock"
-]);
+];
+var DEPENDENCY_FILE_NAMES = new Set(
+  [...DEPENDENCY_MANIFEST_FILE_NAMES, ...DEPENDENCY_LOCK_FILE_NAMES].map((name) => name.toLowerCase())
+);
+var LOW_VALUE_DEPENDENCY_FILE_NAMES = new Set(
+  DEPENDENCY_LOCK_FILE_NAMES.map((name) => name.toLowerCase())
+);
+var PACKAGE_MANAGER_FILE_CANDIDATES = [
+  ["pnpm-lock.yaml", "pnpm"],
+  ["yarn.lock", "yarn"],
+  ["package-lock.json", "npm"],
+  ["uv.lock", "uv"],
+  ["poetry.lock", "poetry"],
+  ["Pipfile.lock", "pipenv"],
+  ["Gemfile.lock", "bundler"],
+  ["composer.lock", "composer"],
+  ["Cargo.lock", "cargo"],
+  ["go.sum", "go"],
+  ["requirements.txt", "pip"],
+  ["Pipfile", "pipenv"],
+  ["Gemfile", "bundler"],
+  ["pom.xml", "maven"],
+  ["build.gradle", "gradle"],
+  ["build.gradle.kts", "gradle"],
+  ["composer.json", "composer"],
+  ["Cargo.toml", "cargo"],
+  ["go.mod", "go"]
+];
 var AUTH_DIRECTORY_NAMES = /* @__PURE__ */ new Set([
   "auth",
   "authentication",
@@ -21176,7 +21192,7 @@ function isGeneratedFile(path) {
 function isLowValueFile(path) {
   const lowerPath = path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
-  return LOW_VALUE_FILE_NAMES.has(name) || /(^|\/)(__snapshots__|vendor)(\/|$)/.test(lowerPath) || /\.(gif|jpe?g|lock|map|png|snap|svg|webp)$/.test(lowerPath);
+  return LOW_VALUE_DEPENDENCY_FILE_NAMES.has(name) || /(^|\/)(__snapshots__|vendor)(\/|$)/.test(lowerPath) || /\.(gif|jpe?g|lock|map|png|snap|svg|webp)$/.test(lowerPath);
 }
 function isTestRelevantFile(path) {
   if (isTestFile(path) || isDocFile(path)) return false;
@@ -21226,11 +21242,11 @@ function getRiskArea(path) {
   if (/(^|\/)(\.github\/workflows|\.circleci)(\/|$)/.test(lowerPath) || /(^|\/)\.gitlab-ci\.yml$/.test(lowerPath)) {
     return "ci";
   }
-  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
-    return "api";
-  }
   if (DEPENDENCY_FILE_NAMES.has(name)) {
     return "dependencies";
+  }
+  if (hasDirectory(lowerPath, API_CONTRACT_DIRECTORY_NAMES) || isApiContractFile(name)) {
+    return "api";
   }
   if (hasDirectory(lowerPath, CONFIGURATION_DIRECTORY_NAMES) || isConfigurationFile(lowerPath, name)) {
     return "configuration";
@@ -21455,18 +21471,8 @@ function buildCoverage(options = {}) {
     notChecked: [...ALWAYS_NOT_CHECKED]
   };
 }
-var MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"];
 var WORKSPACE_ROOTS = ["packages", "apps", "libs", "services"];
 var MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
-var PACKAGE_MANAGER_CANDIDATES = [
-  ["pnpm-lock.yaml", "pnpm"],
-  ["yarn.lock", "yarn"],
-  ["package-lock.json", "npm"],
-  ["uv.lock", "uv"],
-  ["poetry.lock", "poetry"],
-  ["Cargo.lock", "cargo"],
-  ["go.mod", "go"]
-];
 function listWorkspacePackageDirs(repoPath) {
   const packageDirs = [];
   for (const root of WORKSPACE_ROOTS) {
@@ -21486,13 +21492,13 @@ function listWorkspacePackageDirs(repoPath) {
 }
 function collectManifestPaths(repoPath) {
   const manifests = [];
-  for (const manifest of MANIFESTS) {
+  for (const manifest of DEPENDENCY_MANIFEST_FILE_NAMES) {
     if ((0, import_fs3.existsSync)((0, import_path3.join)(repoPath, manifest))) {
       manifests.push(manifest);
     }
   }
   for (const packageDir of listWorkspacePackageDirs(repoPath)) {
-    for (const manifest of MANIFESTS) {
+    for (const manifest of DEPENDENCY_MANIFEST_FILE_NAMES) {
       const relativePath = `${packageDir}/${manifest}`;
       if ((0, import_fs3.existsSync)((0, import_path3.join)(repoPath, relativePath))) {
         manifests.push(relativePath);
@@ -21503,7 +21509,7 @@ function collectManifestPaths(repoPath) {
 }
 function detectPackageManagerAt(repoPath, relativeDir = "") {
   const base = relativeDir.length === 0 ? repoPath : (0, import_path3.join)(repoPath, relativeDir);
-  return PACKAGE_MANAGER_CANDIDATES.find(([path]) => (0, import_fs3.existsSync)((0, import_path3.join)(base, path)))?.[1];
+  return PACKAGE_MANAGER_FILE_CANDIDATES.find(([path]) => (0, import_fs3.existsSync)((0, import_path3.join)(base, path)))?.[1];
 }
 function detectPackageManager(repoPath) {
   const rootManager = detectPackageManagerAt(repoPath);

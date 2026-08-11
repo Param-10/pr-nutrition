@@ -84,6 +84,20 @@ describe("doctor", () => {
     expect(result.checks.find((check) => check.id === "evidence.package-manager")?.message).toContain("pnpm");
   });
 
+  it("reports Composer manifest and package-manager evidence", () => {
+    const repoPath = createCommittedRepository();
+    write(repoPath, "composer.json", "{}\n");
+
+    const result = runDoctor({ repoPath, baseRef: "main", headRef: "HEAD" });
+
+    expect(result.checks.find((check) => check.id === "evidence.package-manifest")?.message).toContain(
+      "composer.json",
+    );
+    expect(result.checks.find((check) => check.id === "evidence.package-manager")?.message).toContain(
+      "composer",
+    );
+  });
+
   it("returns an error result for invalid repo paths and non-directories", () => {
     const missing = runDoctor({ repoPath: "/definitely/not/a/repo", baseRef: "main", headRef: "HEAD" });
     expect(missing.status).toBe("error");
