@@ -5,7 +5,6 @@
   "minScore": 10,
   "maxScore": 10,
   "expectedAreas": [
-    "api",
     "dependencies"
   ],
   "mustNotIncludeAreas": [

@@ -1,20 +1,13 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import {
+  DEPENDENCY_MANIFEST_FILE_NAMES,
+  PACKAGE_MANAGER_FILE_CANDIDATES,
+} from "./dependency-files.js";
 import type { PackageManager, RepositoryEvidence } from "./types.js";
 
-const MANIFESTS = ["package.json", "pyproject.toml", "Cargo.toml", "go.mod"] as const;
 const WORKSPACE_ROOTS = ["packages", "apps", "libs", "services"] as const;
 const MAX_PACKAGE_JSON_BYTES = 1024 * 1024;
-
-const PACKAGE_MANAGER_CANDIDATES: ReadonlyArray<[string, PackageManager]> = [
-  ["pnpm-lock.yaml", "pnpm"],
-  ["yarn.lock", "yarn"],
-  ["package-lock.json", "npm"],
-  ["uv.lock", "uv"],
-  ["poetry.lock", "poetry"],
-  ["Cargo.lock", "cargo"],
-  ["go.mod", "go"],
-];
 
 function listWorkspacePackageDirs(repoPath: string): string[] {
   const packageDirs: string[] = [];
@@ -37,13 +30,13 @@ function listWorkspacePackageDirs(repoPath: string): string[] {
 
 function collectManifestPaths(repoPath: string): string[] {
   const manifests: string[] = [];
-  for (const manifest of MANIFESTS) {
+  for (const manifest of DEPENDENCY_MANIFEST_FILE_NAMES) {
     if (existsSync(join(repoPath, manifest))) {
       manifests.push(manifest);
     }
   }
   for (const packageDir of listWorkspacePackageDirs(repoPath)) {
-    for (const manifest of MANIFESTS) {
+    for (const manifest of DEPENDENCY_MANIFEST_FILE_NAMES) {
       const relativePath = `${packageDir}/${manifest}`;
       if (existsSync(join(repoPath, relativePath))) {
         manifests.push(relativePath);
@@ -55,7 +48,7 @@ function collectManifestPaths(repoPath: string): string[] {
 
 function detectPackageManagerAt(repoPath: string, relativeDir = ""): PackageManager | undefined {
   const base = relativeDir.length === 0 ? repoPath : join(repoPath, relativeDir);
-  return PACKAGE_MANAGER_CANDIDATES.find(([path]) => existsSync(join(base, path)))?.[1];
+  return PACKAGE_MANAGER_FILE_CANDIDATES.find(([path]) => existsSync(join(base, path)))?.[1];
 }
 
 export function detectPackageManager(repoPath: string): PackageManager {
