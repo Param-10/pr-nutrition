@@ -9,8 +9,11 @@
 ## Checklist
 
 - [ ] I ran `pnpm test`
+- [ ] I ran `pnpm eval`
 - [ ] I ran `pnpm typecheck`
 - [ ] I ran `pnpm lint`
+- [ ] I ran `pnpm policy:check`
+- [ ] I ran `pnpm action:bundle-check`
 - [ ] I ran `pnpm build`
 - [ ] I ran `pnpm smoke`
 - [ ] I ran `pnpm release:check`

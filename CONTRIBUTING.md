@@ -4,7 +4,7 @@ Thank you for contributing! We value deterministic rules and reliable local exec
 
 ## Installation and Setup
 
-1. Make sure you are using Node 22.13 or newer, and pnpm 11.8.0.
+1. Activate the repository's Node 24.17.0 pin from `.node-version` (or another supported Node version from 22.13 up to, but not including, 27) and confirm it with `node --version` before running pnpm.
 2. Install dependencies and build:
 
 ```bash
@@ -22,6 +22,7 @@ pnpm test
 pnpm eval
 pnpm typecheck
 pnpm lint
+pnpm policy:check
 pnpm action:bundle-check
 pnpm build
 pnpm smoke

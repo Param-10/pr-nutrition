@@ -16,6 +16,7 @@
     "eval": "node eval/run-eval.mjs",
     "examples": "node scripts/generate-examples.mjs",
     "lint": "eslint .",
+    "policy:check": "node scripts/check-pr-policy.mjs",
     "release:check": "node scripts/release-check.mjs",
     "smoke": "corepack pnpm --filter pr-nutrition smoke && corepack pnpm --filter @pr-nutrition/action smoke",
     "test": "vitest run --passWithNoTests",
