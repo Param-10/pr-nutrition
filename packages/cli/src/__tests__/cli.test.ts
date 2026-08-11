@@ -49,6 +49,9 @@ describe('pr-nutrition CLI runner', () => {
     expect(getStdout()).toContain('--json');
     expect(getStdout()).toContain('--focus-files');
     expect(getStdout()).toContain('--fail-on');
+    expect(getStdout()).toContain('Commands:');
+    expect(getStdout()).toMatch(/check \[options\]\s+Analyze the current branch/);
+    expect(getStdout()).toMatch(/doctor \[options\]\s+Diagnose whether PR Nutrition/);
     expect(getStdout()).toContain('Examples:');
     expect(getStdout()).toContain('pr-nutrition --output pr-nutrition.md');
     expect(getStdout()).toContain('pr-nutrition check');
@@ -59,6 +62,29 @@ describe('pr-nutrition CLI runner', () => {
     const code = await runCli(['node', 'pr-nutrition', '--version'], io);
     expect(code).toBe(0);
     expect(getStdout()).toContain(cliPackageVersion);
+  });
+
+  it.each([
+    ['check', 'Analyze the current branch'],
+    ['doctor', 'Diagnose whether PR Nutrition'],
+  ])('supports conventional help for the %s subcommand', async (subcommand, description) => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', 'help', subcommand], io);
+
+    expect(code).toBe(0);
+    expect(getStdout()).toContain(`Usage: pr-nutrition ${subcommand}`);
+    expect(getStdout()).toContain(description);
+    expect(getStderr()).toBe('');
+  });
+
+  it('supports check --help directly', async () => {
+    const { io, getStdout, getStderr } = createMockIO();
+    const code = await runCli(['node', 'pr-nutrition', 'check', '--help'], io);
+
+    expect(code).toBe(0);
+    expect(getStdout()).toContain('Usage: pr-nutrition check');
+    expect(getStdout()).toContain('--fail-on');
+    expect(getStderr()).toBe('');
   });
 
   it('returns 1 on invalid format', async () => {
