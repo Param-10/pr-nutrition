@@ -3,16 +3,16 @@ import type { AreaClassification, RiskAreaId, RiskReason } from "./types.js";
 
 const LIGHT_MAX_LINES = 10;
 const MODERATE_MAX_FILES = 3;
-const MODERATE_MAX_LINES = 60;
+export const MODERATE_MAX_LINES = 60;
 
-type MagnitudeBand = "light" | "moderate" | "full";
+export type MagnitudeBand = "light" | "moderate" | "full";
 
 export interface AreaMagnitude {
   files: number;
   lines: number;
 }
 
-function magnitudeBand(magnitude: AreaMagnitude): MagnitudeBand {
+export function magnitudeBand(magnitude: AreaMagnitude): MagnitudeBand {
   if (magnitude.files > MODERATE_MAX_FILES || magnitude.lines > MODERATE_MAX_LINES) return "full";
   if (magnitude.files > 1 || magnitude.lines > LIGHT_MAX_LINES) return "moderate";
   return "light";

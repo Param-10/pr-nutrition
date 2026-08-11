@@ -1,4 +1,6 @@
-import { riskAreaPriority } from "./classifier.js";
+import { RISK_AREAS, riskAreaPriority } from "./classifier.js";
+import { LOW_VALUE_DEPENDENCY_FILE_NAMES } from "./dependency-files.js";
+import { MODERATE_MAX_LINES, magnitudeBand } from "./scorer.js";
 import type { AreaClassification, ChangedFile, FocusFile, FocusFileGroup, RiskAreaId } from "./types.js";
 
 const FOCUS_GROUP_TITLES = ["review-first", "review-normally", "skim"] as const;
@@ -12,20 +14,6 @@ const AREA_REASONS: Record<RiskAreaId, string> = {
   configuration: "configuration risk",
 };
 
-const LOCKFILE_NAMES = new Set([
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "composer.lock",
-  "gemfile.lock",
-  "package-lock.json",
-  "pipfile.lock",
-  "pnpm-lock.yaml",
-  "poetry.lock",
-  "uv.lock",
-  "yarn.lock",
-]);
-
 const SKIM_REASON_ORDER = new Map([
   ["generated", 0],
   ["lockfile", 1],
@@ -35,7 +23,7 @@ const SKIM_REASON_ORDER = new Map([
 ]);
 
 function reviewableLineCount(file: ChangedFile): number {
-  return file.isBinary ? 0 : file.additions + file.deletions;
+  return file.isLowValue ? 0 : file.additions + file.deletions;
 }
 
 function buildAreaByPath(areas: AreaClassification[]): Map<string, RiskAreaId> {
@@ -52,7 +40,7 @@ function skimReason(file: ChangedFile): string {
   const lowerPath = file.path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
   if (file.isGenerated) return "generated";
-  if (LOCKFILE_NAMES.has(name) || /\.lock$/.test(name)) return "lockfile";
+  if (LOW_VALUE_DEPENDENCY_FILE_NAMES.has(name) || /\.lock$/.test(name)) return "lockfile";
   if (file.isBinary) return "binary file";
   if (/(^|\/)(vendor|__snapshots__)(\/|$)/.test(lowerPath)) return "vendored";
   return "low-review-value";
@@ -83,6 +71,22 @@ export function buildFocusFileGroups(
   areas: AreaClassification[],
 ): FocusFileGroup[] {
   const areaByPath = buildAreaByPath(areas);
+  const filesByPath = new Map(files.map((file) => [file.path, file] as const));
+  const reviewFirstAreas = new Set<RiskAreaId>();
+  for (const area of areas) {
+    const definition = RISK_AREAS.find((candidate) => candidate.id === area.id);
+    if (definition?.magnitudePoints === undefined) {
+      reviewFirstAreas.add(area.id);
+      continue;
+    }
+    const lines = area.files.reduce((total, path) => {
+      const file = filesByPath.get(path);
+      return total + (file === undefined ? 0 : reviewableLineCount(file));
+    }, 0);
+    if (magnitudeBand({ files: area.files.length, lines }) !== "light") {
+      reviewFirstAreas.add(area.id);
+    }
+  }
   const reviewFirst: FocusFile[] = [];
   const reviewNormally: FocusFile[] = [];
   const skim: FocusFile[] = [];
@@ -94,12 +98,21 @@ export function buildFocusFileGroups(
     }
 
     const area = areaByPath.get(file.path);
-    if (area !== undefined) {
+    if (area !== undefined && reviewFirstAreas.has(area)) {
       reviewFirst.push(focusFile(file, AREA_REASONS[area], area));
       continue;
     }
 
-    reviewNormally.push(focusFile(file, "reviewable source change"));
+    if (area === undefined && reviewableLineCount(file) > MODERATE_MAX_LINES) {
+      reviewFirst.push(focusFile(file, "large reviewable change"));
+      continue;
+    }
+
+    reviewNormally.push(
+      area === undefined
+        ? focusFile(file, "reviewable source change")
+        : focusFile(file, AREA_REASONS[area], area),
+    );
   }
 
   const reviewableLinesByPath = new Map(
@@ -116,9 +129,9 @@ export function buildFocusFileGroups(
   reviewFirst.sort((left, right) => {
     const leftArea = left.area;
     const rightArea = right.area;
-    if (leftArea !== undefined && rightArea !== undefined && leftArea !== rightArea) {
-      return riskAreaPriority(leftArea) - riskAreaPriority(rightArea);
-    }
+    const leftPriority = leftArea === undefined ? Number.MAX_SAFE_INTEGER : riskAreaPriority(leftArea);
+    const rightPriority = rightArea === undefined ? Number.MAX_SAFE_INTEGER : riskAreaPriority(rightArea);
+    if (leftPriority !== rightPriority) return leftPriority - rightPriority;
     return byReviewableLinesThenPath(left, right);
   });
 

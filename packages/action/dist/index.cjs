@@ -21749,6 +21749,48 @@ function compareExplanations(a, b) {
 function buildExplanations(files, matcher) {
   return files.flatMap((file) => explainFile(file, matcher)).sort(compareExplanations);
 }
+var LIGHT_MAX_LINES = 10;
+var MODERATE_MAX_FILES = 3;
+var MODERATE_MAX_LINES = 60;
+function magnitudeBand(magnitude) {
+  if (magnitude.files > MODERATE_MAX_FILES || magnitude.lines > MODERATE_MAX_LINES) return "full";
+  if (magnitude.files > 1 || magnitude.lines > LIGHT_MAX_LINES) return "moderate";
+  return "light";
+}
+function countLabel(count, noun) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+function areaPoints(definition, band) {
+  if (definition.magnitudePoints === void 0 || band === "full") return definition.points;
+  return definition.magnitudePoints[band];
+}
+function areaReason(definition, magnitude, points) {
+  const scope = definition.magnitudePoints === void 0 ? "" : ` in ${countLabel(magnitude.files, "file")}, ${countLabel(magnitude.lines, "reviewable line")}`;
+  return { description: `Touched ${definition.label.toLowerCase()}${scope}`, points };
+}
+function calculateRisk(reviewableFiles, reviewableLines, areas, areaLines = /* @__PURE__ */ new Map()) {
+  let rawScore = 0;
+  const reasons = [];
+  const areaFileCounts = new Map(areas.map((area) => [area.id, area.files.length]));
+  for (const definition of RISK_AREAS) {
+    const files = areaFileCounts.get(definition.id);
+    if (files === void 0) continue;
+    const magnitude = { files, lines: areaLines.get(definition.id) ?? 0 };
+    const points = areaPoints(definition, magnitudeBand(magnitude));
+    rawScore += points;
+    reasons.push(areaReason(definition, magnitude, points));
+  }
+  if (reviewableFiles >= 30 || reviewableLines >= 800) {
+    rawScore += 20;
+    reasons.push({ description: "Size: at least 30 files or 800 lines", points: 20 });
+  } else if (reviewableFiles >= 10 || reviewableLines >= 200) {
+    rawScore += 10;
+    reasons.push({ description: "Size: at least 10 files or 200 lines", points: 10 });
+  }
+  const score = Math.min(rawScore, 100);
+  const level = score >= 50 ? "high" : score >= 20 ? "medium" : "low";
+  return { score, level, reasons };
+}
 var FOCUS_GROUP_TITLES = ["review-first", "review-normally", "skim"];
 var AREA_REASONS = {
   migrations: "migration risk",
@@ -21758,19 +21800,6 @@ var AREA_REASONS = {
   dependencies: "dependency risk",
   configuration: "configuration risk"
 };
-var LOCKFILE_NAMES = /* @__PURE__ */ new Set([
-  "bun.lock",
-  "bun.lockb",
-  "cargo.lock",
-  "composer.lock",
-  "gemfile.lock",
-  "package-lock.json",
-  "pipfile.lock",
-  "pnpm-lock.yaml",
-  "poetry.lock",
-  "uv.lock",
-  "yarn.lock"
-]);
 var SKIM_REASON_ORDER = /* @__PURE__ */ new Map([
   ["generated", 0],
   ["lockfile", 1],
@@ -21779,7 +21808,7 @@ var SKIM_REASON_ORDER = /* @__PURE__ */ new Map([
   ["low-review-value", 4]
 ]);
 function reviewableLineCount(file) {
-  return file.isBinary ? 0 : file.additions + file.deletions;
+  return file.isLowValue ? 0 : file.additions + file.deletions;
 }
 function buildAreaByPath(areas) {
   const areaByPath = /* @__PURE__ */ new Map();
@@ -21794,7 +21823,7 @@ function skimReason(file) {
   const lowerPath = file.path.toLowerCase();
   const name = lowerPath.split("/").at(-1) ?? lowerPath;
   if (file.isGenerated) return "generated";
-  if (LOCKFILE_NAMES.has(name) || /\.lock$/.test(name)) return "lockfile";
+  if (LOW_VALUE_DEPENDENCY_FILE_NAMES.has(name) || /\.lock$/.test(name)) return "lockfile";
   if (file.isBinary) return "binary file";
   if (/(^|\/)(vendor|__snapshots__)(\/|$)/.test(lowerPath)) return "vendored";
   return "low-review-value";
@@ -21815,6 +21844,22 @@ function emptyFocusGroups() {
 }
 function buildFocusFileGroups(files, areas) {
   const areaByPath = buildAreaByPath(areas);
+  const filesByPath = new Map(files.map((file) => [file.path, file]));
+  const reviewFirstAreas = /* @__PURE__ */ new Set();
+  for (const area of areas) {
+    const definition = RISK_AREAS.find((candidate) => candidate.id === area.id);
+    if (definition?.magnitudePoints === void 0) {
+      reviewFirstAreas.add(area.id);
+      continue;
+    }
+    const lines = area.files.reduce((total, path) => {
+      const file = filesByPath.get(path);
+      return total + (file === void 0 ? 0 : reviewableLineCount(file));
+    }, 0);
+    if (magnitudeBand({ files: area.files.length, lines }) !== "light") {
+      reviewFirstAreas.add(area.id);
+    }
+  }
   const reviewFirst = [];
   const reviewNormally = [];
   const skim = [];
@@ -21824,11 +21869,17 @@ function buildFocusFileGroups(files, areas) {
       continue;
     }
     const area = areaByPath.get(file.path);
-    if (area !== void 0) {
+    if (area !== void 0 && reviewFirstAreas.has(area)) {
       reviewFirst.push(focusFile(file, AREA_REASONS[area], area));
       continue;
     }
-    reviewNormally.push(focusFile(file, "reviewable source change"));
+    if (area === void 0 && reviewableLineCount(file) > MODERATE_MAX_LINES) {
+      reviewFirst.push(focusFile(file, "large reviewable change"));
+      continue;
+    }
+    reviewNormally.push(
+      area === void 0 ? focusFile(file, "reviewable source change") : focusFile(file, AREA_REASONS[area], area)
+    );
   }
   const reviewableLinesByPath = new Map(
     files.map((file) => [file.path, reviewableLineCount(file)])
@@ -21842,9 +21893,9 @@ function buildFocusFileGroups(files, areas) {
   reviewFirst.sort((left, right) => {
     const leftArea = left.area;
     const rightArea = right.area;
-    if (leftArea !== void 0 && rightArea !== void 0 && leftArea !== rightArea) {
-      return riskAreaPriority(leftArea) - riskAreaPriority(rightArea);
-    }
+    const leftPriority = leftArea === void 0 ? Number.MAX_SAFE_INTEGER : riskAreaPriority(leftArea);
+    const rightPriority = rightArea === void 0 ? Number.MAX_SAFE_INTEGER : riskAreaPriority(rightArea);
+    if (leftPriority !== rightPriority) return leftPriority - rightPriority;
     return byReviewableLinesThenPath(left, right);
   });
   reviewNormally.sort(byReviewableLinesThenPath);
@@ -21987,48 +22038,6 @@ function parseCheckAttr(output) {
     if (path && value === "true") result.add(path);
   }
   return result;
-}
-var LIGHT_MAX_LINES = 10;
-var MODERATE_MAX_FILES = 3;
-var MODERATE_MAX_LINES = 60;
-function magnitudeBand(magnitude) {
-  if (magnitude.files > MODERATE_MAX_FILES || magnitude.lines > MODERATE_MAX_LINES) return "full";
-  if (magnitude.files > 1 || magnitude.lines > LIGHT_MAX_LINES) return "moderate";
-  return "light";
-}
-function countLabel(count, noun) {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`;
-}
-function areaPoints(definition, band) {
-  if (definition.magnitudePoints === void 0 || band === "full") return definition.points;
-  return definition.magnitudePoints[band];
-}
-function areaReason(definition, magnitude, points) {
-  const scope = definition.magnitudePoints === void 0 ? "" : ` in ${countLabel(magnitude.files, "file")}, ${countLabel(magnitude.lines, "reviewable line")}`;
-  return { description: `Touched ${definition.label.toLowerCase()}${scope}`, points };
-}
-function calculateRisk(reviewableFiles, reviewableLines, areas, areaLines = /* @__PURE__ */ new Map()) {
-  let rawScore = 0;
-  const reasons = [];
-  const areaFileCounts = new Map(areas.map((area) => [area.id, area.files.length]));
-  for (const definition of RISK_AREAS) {
-    const files = areaFileCounts.get(definition.id);
-    if (files === void 0) continue;
-    const magnitude = { files, lines: areaLines.get(definition.id) ?? 0 };
-    const points = areaPoints(definition, magnitudeBand(magnitude));
-    rawScore += points;
-    reasons.push(areaReason(definition, magnitude, points));
-  }
-  if (reviewableFiles >= 30 || reviewableLines >= 800) {
-    rawScore += 20;
-    reasons.push({ description: "Size: at least 30 files or 800 lines", points: 20 });
-  } else if (reviewableFiles >= 10 || reviewableLines >= 200) {
-    rawScore += 10;
-    reasons.push({ description: "Size: at least 10 files or 200 lines", points: 10 });
-  }
-  const score = Math.min(rawScore, 100);
-  const level = score >= 50 ? "high" : score >= 20 ? "medium" : "low";
-  return { score, level, reasons };
 }
 function buildAreas(areaFiles) {
   return RISK_AREAS.flatMap((definition) => {
